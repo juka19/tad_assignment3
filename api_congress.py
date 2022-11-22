@@ -5,6 +5,8 @@ if __name__ == '__main__':
         import os
         import pandas as pd
         import xml.etree.ElementTree as ET
+        import random
+        import time
 
         def congress_deco(output_format='json') -> object:
                 
@@ -46,14 +48,15 @@ if __name__ == '__main__':
         
         
         @congress_deco(output_format='json')
-        def get_congress_data(query:str, *args, api_key=os.getenv('US.GOV_API')) -> dict:
+        def get_congress_data(query:str, api_key:str, *args) -> dict:
                 
                 hdr = {
                         # specifying requested encoding
                         'Cache-Control': 'no-cache',
                         'charset': 'UTF-8',
                         'X-Api-Key': api_key,
-                        'User-Agent': 'Mozilla/5.0'
+                        'User-Agent': random.choice(['Mozilla/5.0', 'Chrome 104.0.0.0', 
+                                                     'Chrome 52.0.2762.73', 'Chrome 55.0.2919.83'])
                         }
                 
                 BASE_URL = 'https://api.congress.gov/v3/'
@@ -66,13 +69,14 @@ if __name__ == '__main__':
                 return (query_url, hdr)
         
         @congress_deco(output_format='html')
-        def get_bill_text(query:str, api_key=os.getenv('US.GOV_API')) -> str:
+        def get_bill_text(query:str) -> str:
                 
                 hdr = {
                         # specifying requested encoding
                         'Cache-Control': 'no-cache',
                         'charset': 'UTF-8',
-                        'User-Agent': 'Mozilla/5.0'
+                        'User-Agent': random.choice(['Mozilla/5.0', 'Chrome 104.0.0.0', 
+                                                     'Chrome 52.0.2762.73', 'Chrome 55.0.2919.83'])
                         }
                 
                 return (query, hdr)
@@ -137,8 +141,33 @@ if __name__ == '__main__':
         
         bills_recent = bills_df[bills_df.congress > 115]
         
-        for i, row in bills_recent.iterrows():
+        counter = 0
+        start_t = time.time()
+        
+        api_keys = list(map(os.getenv, ['US.GOV_API', 'US.GOV_API2', 'US.GOV_API3', 'US.GOV_API4']))
+        api_key = api_keys.pop()
+        
+        for _, row in bills_recent.reset_index(inplace=True).iterrows():
                 
+                counter += 7
+                
+                if (counter%4000 <= 7) & (counter > 10):
+                        
+                        end_t = time.time()
+                        elapsed = end_t - start_t
+                        time.sleep(60*60 - elapsed + 10)
+                        
+                        start_t = time.time()
+                        
+                        counter = 7
+                
+                elif (counter%1000 <= 7) & (counter > 10):
+                        
+                        if api_keys:
+                                api_key = api_keys.pop()
+                        else:
+                                api_keys = list(map(os.getenv, ['US.GOV_API', 'US.GOV_API2', 'US.GOV_API3', 'US.GOV_API4']))
+                        
                 try:
                         metadata = get_congress_data(get_root_url(row['url']))
                         # TODO: get infos from metadata dictionary, like sponsors, originChamber, polyArea, title
@@ -158,11 +187,11 @@ if __name__ == '__main__':
                                 get_root_url(row['url']) + '/relatedbills')
                         
                         dic_i = {'metadata': metadata,
-                         'text' : text,
-                         'summary': summary,
-                         'subjects': subjects,
-                         'related_bills': related_bills
-                         }
+                        'text' : text,
+                        'summary': summary,
+                        'subjects': subjects,
+                        'related_bills': related_bills
+                        }
                         
                         output_l.append(dic_i)
                         #TODO: optional, extract information from this. Otherwise 
@@ -171,7 +200,7 @@ if __name__ == '__main__':
                 
                 except Exception as e:
                         print(e)
-                                
+                        
 else:
         import urllib.request
         import json
