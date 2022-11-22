@@ -84,7 +84,7 @@ if __name__ == '__main__':
         #                 BASE_URL = 'https://api.congress.gov/v3/'
                         
         #                 hdr = {
-        #                 specifying requested encoding
+        #                 #specifying requested encoding
         #                 'Cache-Control': 'no-cache',
         #                 'charset': 'UTF-8',
         #                 'X-Api-Key': api_key
@@ -128,12 +128,16 @@ if __name__ == '__main__':
                                 next_link = False
         
         bills_df = pd.concat([pd.DataFrame.from_records(recs) for recs in bills], axis=0)
-        bills_df.to_csv('bills.csv')
+        bills_df.to_csv('data/bills.csv')
         
         def get_root_url(url):
                 return url.replace('https://api.congress.gov/v3/', '').replace('?format=json', '')
         
-        for i, row in bills_df.itterows():
+        output_l = []
+        
+        bills_recent = bills_df[bills_df.congress > 115]
+        
+        for i, row in bills_recent.iterrows():
                 
                 try:
                         metadata = get_congress_data(get_root_url(row['url']))
@@ -141,6 +145,8 @@ if __name__ == '__main__':
                         
                         text_url = get_congress_data(
                                 get_root_url(row['url']) + '/text')['textVersions'][0]['formats'][0]['url']
+                        
+                        text = get_bill_text(text_url)
                         
                         summary = get_congress_data(
                                 get_root_url(row['url']) + '/summaries')['summaries'][0]['text']
@@ -150,6 +156,15 @@ if __name__ == '__main__':
                         
                         related_bills = get_congress_data(
                                 get_root_url(row['url']) + '/relatedbills')
+                        
+                        dic_i = {'metadata': metadata,
+                         'text' : text,
+                         'summary': summary,
+                         'subjects': subjects,
+                         'related_bills': related_bills
+                         }
+                        
+                        output_l.append(dic_i)
                         #TODO: optional, extract information from this. Otherwise 
                         
                         #TODO: extract: amendments, committees, cosponsors(!), titles                        
