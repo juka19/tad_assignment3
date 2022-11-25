@@ -87,6 +87,7 @@ def get_root_url(url):
 
 def loop_function(api_key, url):
     try:
+
             metadata = get_congress_data(get_root_url(url), api_key=api_key)
             # TODO: get infos from metadata dictionary, like sponsors, originChamber, polyArea, title
             
@@ -117,59 +118,63 @@ def loop_function(api_key, url):
                     
             latest_action = metadata['bill']['latestAction']['actionDate']
             
-            summary_l = get_congress_data(get_root_url(url) + '/summaries', api_key=api_key)['summaries']
-            
-            summary_dict = {i['actionDesc']: i['text'] for i in summary_l}
-            
-            summary_dict['bill'] = bill_number
-            summary_dict['title'] = metadata['bill']['title']
-            
             subjects = get_congress_data(get_root_url(url) + '/subjects', api_key=api_key)['subjects']
             
-            related_bills = get_congress_data(get_root_url(url) + '/relatedbills', api_key=api_key)
+            # related_bills = get_congress_data(get_root_url(url) + '/relatedbills', api_key=api_key)
             
-            # dic_i = {'metadata': metadata,
-            # 'text' : text,
-            # 'summary': summary,
-            # 'subjects': subjects,
-            # 'related_bills': related_bills
-            # }
-            
-            try:
+            # try:
                     
-                    text_l = get_congress_data(get_root_url(url) + '/text', api_key=api_key)['textVersions']
+            #         text_l = get_congress_data(get_root_url(url) + '/text', api_key=api_key)['textVersions']
                     
-                    if len(text_l) > 2:
+            #         if len(text_l) > 2:
                             
-                            text_dict = {i['type']: get_bill_text(i['formats'][0]['url']) for i in text_l if (i['formats'] and i['type'])}
-                    else:
-                            text_dict = {text_l[0]['type']: get_bill_text(text_l[0]['formats'][0]['url'])}
+            #                 text_dict = {i['type']: get_bill_text(i['formats'][0]['url']) for i in text_l if (i['formats'] and i['type'])}
+            #         else:
+            #                 text_dict = {text_l[0]['type']: get_bill_text(text_l[0]['formats'][0]['url'])}
                     
-                    text_dict['bill'] = row['number']
-                    text_dict['title'] = row['title']
+            #         text_dict['bill'] = row['number']
+            #         text_dict['title'] = row['title']
             
-            except Exception as er:
+            # except Exception as er:
+            #         print(er)
+            #         text_dict = None  
                     
-                    print(er)
-                    text_dict = None
+            summaries = get_congress_data(get_root_url(url) + '/summaries', api_key=api_key)
             
+            if summaries['summaries']:
+                summary = summaries['summaries'][-1]['text']
+            else:
+                summary = ''
+            # summary_dict = {i['actionDesc']: i['text'] for i in summary_l}
+        
+        
+            # summary_dict['bill'] = bill_number
+            # summary_dict['title'] = metadata['bill']['title']         
             
-            summary_list.append(summary_dict)
-            text_list.append(text_dict)
+            # summary_list.append(summary_dict)
+            # text_list.append(text_dict)
             list_cosponsors.extend(cosponsor_l)
-            output_l.append({'bill number': bill_number, 'subjects': subjects, 'related_bills' : related_bills,
+            output_l.append({'bill number': bill_number, 'subjects': subjects, 
+                            # 'related_bills' : related_bills,
+                            'summary': summary,
                             'policy_area': policy_area, 'latest_action': latest_action,
                             'cosponsor_D_perc': cosponsor_D_perc, 'cosponsor_R_perc': cosponsor_R_perc})
             
             #TODO: optional, extract information from this. Otherwise 
             
-            #TODO: extract: amendments, committees, cosponsors(!), titles                        
+            #TODO: extract: amendments, committees, cosponsors(!), titles
             
     except Exception as e:
             print(e)
             exceptions.append[i]
 
-bills_df = pd.read_csv('data/bills3.csv')
+bills_df = pd.read_csv('data/old_data/bills3.csv')
+bills_df = bills_df[bills_df['latestAction'].str.contains('Became Public Law')]
+
+bills_df2 = pd.read_csv('data/old_data/bills2.csv')
+bills_df2 = bills_df2[(bills_df2['latestAction'].str.contains('Became Public Law')) & (bills_df2['congress'] == 116)]
+
+FINAL_DF = pd.concat([bills_df, bills_df2]).reset_index()
 
 output_l = []
 list_cosponsors = []
@@ -181,21 +186,20 @@ exceptions = []
 counter = 0
 start_t = time.time()
 
-api_keys = list(map(os.getenv, ['US.GOV_API', 'US.GOV_API2', 'US.GOV_API3', 'US.GOV_API4']))
+api_keys = list(map(os.getenv, list(reversed(['US.GOV_API', 'US.GOV_API3', 'US.GOV_API4', 'US.GOV_API2']))))
 api_key = api_keys.pop()
 
+# pool_size = 8
 
-pool_size = 8
+# pool = Pool(pool_size)
 
-pool = Pool(pool_size)
-
-for i, row in bills_df.head(170).iterrows():
+for i, row in FINAL_DF.iterrows():
         
-        print(f'Querying bill {i} of {len(bills_df)}')
+        print(f'Querying bill {i} of {len(FINAL_DF)}')
         
-        counter += 6
+        counter += 4
         
-        if (counter%4000 <= 6) & (counter > 10):
+        if (counter%4000 <= 4) & (counter > 10):
                 
                 end_t = time.time()
                 elapsed = end_t - start_t
@@ -204,32 +208,64 @@ for i, row in bills_df.head(170).iterrows():
                     time.sleep(60*60 - elapsed)
                     time.sleep(10)
                 
-                api_keys = list(map(os.getenv, ['US.GOV_API', 'US.GOV_API2', 'US.GOV_API3', 'US.GOV_API4']))
+                api_keys = list(map(os.getenv, ['US.GOV_API4', 'US.GOV_API3', 'US.GOV_API2', 'US.GOV_API']))
                 api_key = api_keys.pop()
                 
                 start_t = time.time()
                 
-                counter = 6
+                counter = 4
                 
-        elif (counter%1000 <= 6) & (counter > 10):
+        if (counter%1000 <= 4) & (counter > 10) & (counter != 4000):
                 
                 if api_keys:
                         api_key = api_keys.pop()
                 else:
                         api_keys = list(map(os.getenv, ['US.GOV_API', 'US.GOV_API2', 'US.GOV_API3', 'US.GOV_API4']))
                         
-        pool.apply_async(loop_function, (api_key, row['url']))
+        # pool.apply_async(loop_function, (api_key, row['url']))
+        try:
+            loop_function(api_key=api_key, url=row['url'])
+        except TypeError as e:
+            print(e)
+            continue
+        except urllib.request.HTTPError as httperr:
+                print(httperr)
+                end_t = time.time()
+                elapsed = end_t - start_t
+                if elapsed < 60*60:
+                        time.sleep(60*60 - elapsed)
+                continue
 
-pool.close()
-pool.join()
+# pool.close()
+# pool.join()
+
+485-490
+# error
+# <urlopen error [Errno 11001] getaddrinfo failed>
+# 'NoneType' object is not subscriptable
+# 'builtin_function_or_method' object is not subscriptable
+889, 938
+# <urlopen error _ssl.c:1106: The handshake operation timed out>
+# 'NoneType' object is not subscriptable
+# 'builtin_function_or_method' object is not subscriptable
+942 & 943
+# The read operation timed out
+# 'NoneType' object is not subscriptable
+# 'builtin_function_or_method' object is not subscriptable
 
 df_ouput_cosponsors = pd.DataFrame.from_records(list_cosponsors)
 
 output_df = pd.DataFrame.from_records(output_l)
+
+
+
 text_df = pd.DataFrame.from_records(text_list)
 summary_df = pd.DataFrame.from_records(summary_list)
 
 summary_df.to_csv('data/summary_data.csv')
-df_ouput_cosponsors.to_csv('data/cosponsors_data.csv')
-output_df.to_csv('data/all_info_df.csv')
+df_ouput_cosponsors.to_csv('data/cosponsors_final.csv')
+output_df.to_csv('data/all_info_final.csv')
 text_df.to_csv('data/text_data.csv')      
+
+
+FINAL_DF = bills_df[bills_df['latestAction'].str.contains('Became Public Law')]
