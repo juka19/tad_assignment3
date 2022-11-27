@@ -15,6 +15,8 @@ library(tidyverse)
 library(quanteda)
 library(quanteda.textstats)
 library(readr)
+library(dplyr)
+library(quanteda.textplots)
 ```
 
 ```{r}
@@ -28,6 +30,54 @@ df <- read_csv(url)
 #Trying to extract party name (D or R) from the sponsor, will figure this out with Regex
 
 df$party <- ifelse(str_detect(df$Sponsor, "R-[A-Z]{2,}"),"Republican", ifelse(str_detect(df$Sponsor,"D-[A-Z]{2,}"),"Democrat", NA))
+```
+
+## Creating a corpus
+```{r}
+df_corp <- df
+df_corp <- df_corp %>% rename(text = Summary)
+corp <- corpus(df_corp)
+
+````
+
+##Creatung a dfm from the corpus
+```{r}
+dfm <- corp %>%
+  tokens(remove_punct = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  dfm()
+
+````
+
+##Most common words in the corpus
+```{r}
+
+dfm %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
+```
+
+
+
+
+
+#Wordcloud comparing Democrats and Republicans
+```{r}
+dfmat2 <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$party) %>%
+    dfm_trim(min_termfreq = 3)
+
+textplot_wordcloud(dfmat2, comparison = TRUE, max_words = 300,
+                   color = c("blue", "red"))
+
+```
+
+
+#Wordcloud comparing Congress
+```{r}
+dfmat3 <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$Congress) %>%
+    dfm_trim(min_termfreq = 3)
+
+textplot_wordcloud(dfmat3, comparison = TRUE, max_words = 300,
+                   color = c("blue", "red"))
+
 ```
 
 ## Creating document feature matrix
