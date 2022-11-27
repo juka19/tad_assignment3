@@ -1,0 +1,40 @@
+---
+title: "Cleaning HTLM Tags"
+author: "Andrew Wells"
+date: "11/27/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading Packages
+```{r}
+library(tidyverse)
+library(quanteda)
+library(readr)
+```
+
+#Loading data
+```{r}
+df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/all_data.csv")
+```
+
+## Cleaning data
+```{r}
+#Function for removing HTML tags
+cleanFun <- function(htmlString) {
+  return(gsub("<.*?>", "", htmlString))
+}
+
+#Applying function to clean data
+df$summary <- cleanFun(df$summary)
+```
+
+#Saving data
+```{r}
+write.csv(df, "~/Desktop/Semester 5/Classes/4. Text as data/Assignments/Final assignment/all_data_cleaned_summary.csv")
+```
+
+
