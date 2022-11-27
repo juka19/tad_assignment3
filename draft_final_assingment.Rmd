@@ -55,8 +55,26 @@ dfm <- corp %>%
 dfm %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
 ```
 
+#Wordcloud congress 116
+
+```{r}
+dfmat4 <- dfm(corpus_subset(corp, Congress == 116), remove = stopwords("english"), remove_punct = TRUE) %>%
+    dfm_trim(min_termfreq = 1)
+
+textplot_wordcloud(dfmat4, max_words = 300)
+
+```
 
 
+#Wordcloud congress 117
+
+```{r}
+dfmat5 <- dfm(corpus_subset(corp, Congress == 117), remove = stopwords("english"), remove_punct = TRUE) %>%
+    dfm_trim(min_termfreq = 1)
+
+textplot_wordcloud(dfmat5, max_words = 300)
+
+```
 
 
 #Wordcloud comparing Democrats and Republicans
@@ -70,7 +88,7 @@ textplot_wordcloud(dfmat2, comparison = TRUE, max_words = 300,
 ```
 
 
-#Wordcloud comparing Congress
+#Wordcloud comparing Congresses
 ```{r}
 dfmat3 <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$Congress) %>%
     dfm_trim(min_termfreq = 3)
