@@ -27,9 +27,7 @@ df <- read_csv(url)
 ```{r}
 #Trying to extract party name (D or R) from the sponsor, will figure this out with Regex
 
-df %>%
-  mutate(party = ifelse(str_detect(Sponsor, "[R-"), "Republican", 
-                   ifelse(str_detect(Sponsor, "[D-"), "Democrat", NA)))
+df$party <- ifelse(str_detect(df$Sponsor, "R-[A-Z]{2,}"),"Republican", ifelse(str_detect(df$Sponsor,"D-[A-Z]{2,}"),"Democrat", NA))
 ```
 
 ## Creating document feature matrix
