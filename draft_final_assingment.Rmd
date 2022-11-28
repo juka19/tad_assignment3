@@ -22,7 +22,7 @@ library(topicmodels)
 library(tidytext)
 library(ggrepel)
 library(vader)
-Library(tidyr)
+library(tidyr)
 ```
 
 ```{r }
@@ -363,48 +363,32 @@ doc_sentiments
 ```
 
 ```{r}
-df %>%
-  is.na(summary)
+#Loading df with VADER compount scores
 
-
-sentiments <- vader_df(df$summary)
-
-summary_sentiment <- cbind(df, select(sentiments,-text))
-
-pos <- summary_sentiment %>% 
-  arrange(desc(compound)) %>% 
-  head()
-
-for( i in rownames(pos) ) { 
-  print(pos[i, "text"]) 
-  print(pos[i, "compound"])
-}
-
-neg <- summary_sentiment %>% 
-  arrange(compound) %>% 
-  head()
-
-for( i in rownames(neg) ) { 
-  print(neg[i, "text"]) 
-  print(neg[i, "compound"])
-}
+summary_sentiment <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_w_vader.csv")
 ```
 
 
 ```{r}
 library(tidyr)
 #tweet_sentiment$date <- as.Date(tweet_sentiment$created) 
+summary_sentiment <- summary_sentiment %>%
+  mutate(partisan = ifelse(cosponsor_D_perc > 0.5,"Dem", 
+                       ifelse(cosponsor_D_perc < 0.5,"Rep",
+                              ifelse(cosponsor_D_perc == 0.5,"Neutral", NA))))
 
 wide_sentiment <- summary_sentiment %>%
   group_by(partisan, date) %>%
   summarise(score = mean(compound)) %>% 
-  pivot_wider(names_from = partisan, values_from = score)
+  pivot_wider(names_from = partisan, values_from = score) %>%
+  select(-c("Neutral", "NA"))
+
 
 days <- data.frame(date = seq(as.Date("2017-01-01"),as.Date("2022-12-31"),1))
 
 daily_sentiment <- days %>% 
   left_join(wide_sentiment) %>% 
-  pivot_longer(cols = -date, names_to="partisan", values_to="score") %>% 
+  pivot_longer(cols = -date, names_to="partisan", values_to="score") %>%
   group_by(partisan) %>% 
   arrange(date) %>%
   mutate(score7 = data.table::frollmean(score, 7))
@@ -412,7 +396,8 @@ daily_sentiment <- days %>%
 daily_sentiment %>% head()
 
 ggplot(daily_sentiment, aes(date, colour=partisan)) +
-  geom_point(aes(y=score),size=0.5) + geom_line(aes(y=score7))
+  geom_point(aes(y=score), size=0.5) + 
+  geom_line(aes(y=score7)) + theme_minimal()
 ```
 
 
