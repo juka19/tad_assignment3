@@ -23,6 +23,8 @@ library(tidytext)
 library(ggrepel)
 library(vader)
 library(tidyr)
+
+
 ```
 
 ```{r }
@@ -163,8 +165,8 @@ mp17
 
 #Wordcloud comparing Congresses
 ```{r }
-dfmatCon <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$session) %>%
-    dfm_trim(min_termfreq = 3)
+dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm_trim(min_termfreq = 3)
 
 textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
                    color = c("blue", "red"))
