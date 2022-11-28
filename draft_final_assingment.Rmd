@@ -21,6 +21,8 @@ library(uwot)
 library(topicmodels)
 library(tidytext)
 library(ggrepel)
+library(vader)
+Library(tidyr)
 ```
 
 ```{r }
@@ -283,38 +285,75 @@ p
 ##Topic modeling
 
 ```{r }
-lda <- LDA(dfm_, 3)
+#Topics for session 115 (2017 - 2018)
 
-lda
-```
+lda_115 <- LDA(dfmat_115, 5)
 
-
-```{r}
-library(tidytext)
-
-topic_words <- tidy(lda, matrix="beta") %>% 
+topic_words_115 <- tidy(lda_115, matrix="beta") %>% 
   group_by(topic) %>%
-  slice_max(beta, n = 3) %>%
+  slice_max(beta, n = 10) %>%
   ungroup() %>%
   arrange(topic, -beta) 
 
-topic_words
+topic_words_115
 
-topic_words %>%
+topic_words_115 %>%
   mutate(term = reorder_within(term, beta, topic)) %>% 
   ggplot(aes(beta, term, fill = factor(topic))) + 
   geom_col(show.legend = FALSE) +
-  facet_wrap(~ topic, scales = "free") + scale_y_reordered()
+  facet_wrap(~ topic, scales = "free") + scale_y_reordered() + theme_minimal()
+```
+
+```{r }
+#Topics for session 116 (2019 - 2020)
+
+lda_116 <- LDA(dfmat_116, 5)
+
+topic_words_116 <- tidy(lda_116, matrix="beta") %>% 
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -beta) 
+
+topic_words_116
+
+topic_words_116 %>%
+  mutate(term = reorder_within(term, beta, topic)) %>% 
+  ggplot(aes(beta, term, fill = factor(topic))) + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") + scale_y_reordered() + theme_minimal()
+```
+
+```{r }
+#Topics for session 117 (2021 - 2022)
+raw.sum = apply(dfmat_117,1,FUN=sum) #Removing non-0 rows from dfmat
+dfmat_117 = dfmat_117[raw.sum != 0, ]
+
+lda_117 <- LDA(dfmat_117, 5)
+
+topic_words_117 <- tidy(lda_117, matrix="beta") %>% 
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -beta) 
+
+topic_words_117
+
+topic_words_117 %>%
+  mutate(term = reorder_within(term, beta, topic)) %>% 
+  ggplot(aes(beta, term, fill = factor(topic))) + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") + scale_y_reordered() + theme_minimal()
 ```
 
 ##Sentiments
 ```{r}
 lex <- get_sentiments("afinn")
 
-text_tokens <- tidy(dfm_corp) %>% 
+text_tokens <- tidy(dfmat) %>% 
   inner_join(lex, by=c("term" = "word"))
 
-doc_sentiments <- tidy(dfm_corp) %>% 
+doc_sentiments <- tidy(dfmat) %>% 
   inner_join(lex, by=c("term" = "word")) %>% 
   mutate(value=value*count) %>% 
   group_by(document) %>%
@@ -324,9 +363,11 @@ doc_sentiments
 ```
 
 ```{r}
-library(vader)
+df %>%
+  is.na(summary)
 
-sentiments <- vader_df(df$Summary)
+
+sentiments <- vader_df(df$summary)
 
 summary_sentiment <- cbind(df, select(sentiments,-text))
 
@@ -350,5 +391,28 @@ for( i in rownames(neg) ) {
 ```
 
 
+```{r}
+library(tidyr)
+#tweet_sentiment$date <- as.Date(tweet_sentiment$created) 
+
+wide_sentiment <- summary_sentiment %>%
+  group_by(partisan, date) %>%
+  summarise(score = mean(compound)) %>% 
+  pivot_wider(names_from = partisan, values_from = score)
+
+days <- data.frame(date = seq(as.Date("2017-01-01"),as.Date("2022-12-31"),1))
+
+daily_sentiment <- days %>% 
+  left_join(wide_sentiment) %>% 
+  pivot_longer(cols = -date, names_to="partisan", values_to="score") %>% 
+  group_by(partisan) %>% 
+  arrange(date) %>%
+  mutate(score7 = data.table::frollmean(score, 7))
+
+daily_sentiment %>% head()
+
+ggplot(daily_sentiment, aes(date, colour=partisan)) +
+  geom_point(aes(y=score),size=0.5) + geom_line(aes(y=score7))
+```
 
 
