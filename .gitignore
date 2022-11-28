@@ -157,3 +157,7 @@ tad_venv3
 data/old_data
 data/all_info_final.csv
 data/all_cosp_data.csv
+no.txt
+data.txt
+data/action_codes.csv
+data/additional_info_final.csv
