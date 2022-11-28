@@ -19,39 +19,24 @@ library(dplyr)
 library(quanteda.textplots)
 ```
 
-```{r}
-
-
-url <- "data/data_11_28.csv"
-
-df <- read_csv(url)
+```{r }
+df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_11_28.csv")
 ```
-
-## Cleaning data
-```{r}
-#Trying to extract party name (D or R) from the sponsor, will figure this out with Regex
-
-df$Party <- ifelse(str_detect(df$Sponsor, "R-[A-Z]{2,}"),"Republican", ifelse(str_detect(df$Sponsor,"D-[A-Z]{2,}"),"Democrat", NA))
-```
-
 ## Creating a corpus
-```{r}
+```{r }
 df_corp <- df
 df_corp <- df_corp %>% rename(text = summary)
 corp <- corpus(df_corp)
-
-
-````
+```
 
 ##Creatung a dfm from the corpus
-```{r}
+```{r }
 dfm_corp <- corp %>%
   tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
   tokens_remove(patter = stopwords("en")) %>%
   tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used"))%>%
   dfm()
-
-````
+```
 
 ##Most common words in the corpus
 ```{r}
