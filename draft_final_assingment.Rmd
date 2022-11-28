@@ -19,6 +19,7 @@ library(dplyr)
 library(quanteda.textplots)
 library(uwot)
 library(topicmodels)
+library(tidytext)
 ```
 
 ```{r }
@@ -249,7 +250,7 @@ p
 ##Topic modeling
 
 ```{r }
-lda <- LDA(dfmat, 3)
+lda <- LDA(dfm_, 3)
 
 lda
 ```
