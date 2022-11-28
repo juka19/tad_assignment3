@@ -17,6 +17,8 @@ library(quanteda.textstats)
 library(readr)
 library(dplyr)
 library(quanteda.textplots)
+library(uwot)
+library(topicmodels)
 ```
 
 ```{r }
@@ -34,42 +36,59 @@ corp <- corpus(df_corp)
 dfm_corp <- corp %>%
   tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
   tokens_remove(patter = stopwords("en")) %>%
-  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used"))%>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
   dfm()
+
+#Do we also want to lemmatize and apply word stems??
+
+# tokens_replace(pattern = lexicon::hash_lemmas$token, replacement = lexicon::hash_lemmas$lemma) %>%
+
+# tokens_wordstem() %>%
 ```
 
 ##Most common words in the corpus
-```{r}
-
+```{r }
 dfm_corp %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
+```
+#Wordcloud congress 115
+
+```{r }
+dfmat115 <- dfm(corpus_subset(corp, session == 115), remove = stopwords("english"), remove_punct = TRUE,
+                remove_numbers = TRUE) %>%
+  dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+    dfm_trim(min_termfreq = 1)
+
+textplot_wordcloud(dfmat115, max_words = 300)
 ```
 
 #Wordcloud congress 116
 
-```{r}
-dfmat116 <- dfm(corpus_subset(corp, Congress == 116), remove = stopwords("english"), remove_punct = TRUE) %>%
+```{r }
+dfmat116 <- dfm(corpus_subset(corp, session == 116), remove = stopwords("english"), remove_punct = TRUE, 
+                remove_numbers = TRUE) %>%
+  dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
     dfm_trim(min_termfreq = 1)
 
 textplot_wordcloud(dfmat116, max_words = 300)
-
 ```
 
 
 #Wordcloud congress 117
 
-```{r}
-dfmat117 <- dfm(corpus_subset(corp, Congress == 117), remove = stopwords("english"), remove_punct = TRUE) %>%
+```{r }
+dfmat117 <- dfm(corpus_subset(corp, session == 117), remove = stopwords("english"), remove_punct = TRUE,
+                remove_numbers = TRUE) %>%
+  dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
     dfm_trim(min_termfreq = 1)
 
 textplot_wordcloud(dfmat117, max_words = 300)
-
-
-
 ```
 
 
 #Wordcloud comparing Democrats and Republicans
-```{r}
+```{r }
+#Need to get sponser party data
+
 dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$Party) %>%
     dfm_trim(min_termfreq = 3)
 
@@ -80,7 +99,7 @@ textplot_wordcloud(dfmatRepDem, comparison = TRUE, max_words = 300,
 
 
 #Wordcloud comparing Congresses
-```{r}
+```{r }
 dfmatCon <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$Congress) %>%
     dfm_trim(min_termfreq = 3)
 
@@ -89,78 +108,97 @@ textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
 
 ```
 
-## Creating document feature matrix
-```{r}
-dfmat <- df$Summary %>%
-  tokens(remove_punct = TRUE) %>%
-  tokens_remove(patter = stopwords("en")) %>%
-  dfm()
-```
-
-## Most common words
+## Most common words (overall)
 ```{r}
 #Overall most common words
 
-tfreq <- dfmat %>%
+tfreq <- dfm_corp %>%
   textstat_frequency() %>%
   head(20)
 
 tfreq$feature <- factor(tfreq$feature, levels=tfreq$feature) 
 
 ggplot(tfreq, aes(x=frequency, y=feature)) +
-geom_col() + 
+geom_col() + labs(title="Feature (word) frequency",
+        x ="Frequency", y = "Feature") +
+  theme_minimal() 
+```
+## Most common words (by session)
+
+```{r }
+# Most common words by Congressional session 115
+df_115 <- df %>%
+  filter(session == "115")
+
+dfmat_115 <- df_115$summary %>%
+  tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm()
+
+tfreq_115 <- dfmat_115 %>%
+  textstat_frequency() %>%
+  head(20)
+
+tfreq_115$feature <- factor(tfreq_115$feature, levels=tfreq_115$feature) 
+
+ggplot(tfreq_115, aes(x=frequency, y=feature)) +
+  geom_col() + labs(title="Feature (word) frequency for 115 session (2017 - 2018)",
+        x ="Frequency", y = "Feature") +
   theme_minimal()
 ```
 
-```{r}
-# Most common words by Congressional sesson
+```{r }
+# Most common words by Congressional session 116
 df_116 <- df %>%
-  filter(Congress == "116")
+  filter(session == "116")
 
-df_117 <- df %>%
-  filter(Congress == "117")
-
-dfmat_116 <- df_116$Summary %>%
-  tokens(remove_punct = TRUE) %>%
+dfmat_116 <- df_116$summary %>%
+  tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
   tokens_remove(patter = stopwords("en")) %>%
-  dfm()
-
-dfmat_117 <- df_117$Summary %>%
-  tokens(remove_punct = TRUE) %>%
-  tokens_remove(patter = stopwords("en")) %>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
   dfm()
 
 tfreq_116 <- dfmat_116 %>%
   textstat_frequency() %>%
   head(20)
 
+tfreq_116$feature <- factor(tfreq_116$feature, levels=tfreq_116$feature) 
+
+ggplot(tfreq_116, aes(x=frequency, y=feature)) +
+  geom_col() + labs(title="Feature (word) frequency for 116 session (2019 - 2020)",
+        x ="Frequency", y = "Feature") +
+  theme_minimal()
+```
+
+```{r}
+# Most common words by Congressional session 117
+df_117 <- df %>%
+  filter(session == "117")
+
+dfmat_117 <- df_117$summary %>%
+  tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm()
+
 tfreq_117 <- dfmat_117 %>%
   textstat_frequency() %>%
   head(20)
 
-tfreq_116$feature <- factor(tfreq_116$feature, levels=tfreq_116$feature) 
 tfreq_117$feature <- factor(tfreq_117$feature, levels=tfreq_117$feature) 
 
-p116 <- ggplot(tfreq_116, aes(x=frequency, y=feature)) +
-  geom_col() + 
+ggplot(tfreq_117, aes(x=frequency, y=feature)) +
+  geom_col() + labs(title="Feature (word) frequency for 117 session (2021 - 2022)",
+        x ="Frequency", y = "Feature") +
   theme_minimal()
-
-p117 <- ggplot(tfreq_117, aes(x=frequency, y=feature)) +
-  geom_col() + 
-  theme_minimal()
-
-p116
-```
-
-```{r}
-p117
 ```
 
 
 ```{r}
-df$era <- ifelse(df$Congress == 116, "Pre", "Post")
+df$era <- ifelse(df$session == 116, "Pre", "Post")
 
-ytfreq <- dfmat %>% 
+ytfreq <- dfm_corp %>% 
   textstat_frequency(groups = df$era) %>%
   pivot_wider(id_cols=feature, names_from=group, values_from=frequency)
               
@@ -168,17 +206,23 @@ ggplot(ytfreq, aes(x="Post", y="Pre")) +
   geom_point() +
   coord_fixed()
 ```
+
+
 ```{r}
-sims <- textstat_simil(dfmat, method="cosine")
+sims <- textstat_simil(dfm_corp, method="cosine")
 
 sim_df <- as.data.frame(sims, upper = TRUE)
 
 sim_df
 ```
-```{r}
-library(uwot)
 
-corp <- corpus(df$Summary)
+```{r }
+df <- df %>%
+  mutate(partisan = ifelse(cosponsor_D_perc > 0.5,"Dem", 
+                       ifelse(cosponsor_D_perc < 0.5,"Rep",
+                              ifelse(cosponsor_D_perc == 0.5,"Neutral", NA))))
+
+corp <- corpus(df$summary)
 
 dfmat2 <- corp %>%
   tokens(remove_punct = TRUE) %>%
@@ -191,22 +235,26 @@ embeddings <- umap(as.matrix(dfmat2))
 df$x <- embeddings[,1]
 df$y <- embeddings[,2]
 
-colordict <- c( "Labour"="red","LibDems"="yellow", "Conservatives"="Blue","Greens"="green")
+colordict <- c( "Dem"="blue","Rep"="red", "Neutral"="yellow")
 
-p <- ggplot(df, aes(x, y, fill=party)) + 
+p <- ggplot(df, aes(x, y, fill=partisan)) + 
   geom_point(color="grey", shape=21, size=0.5) + 
-  scale_fill_manual(values=colordict) + theme_bw() +
+  scale_fill_manual(values=colordict) +
+  theme_bw() +
   coord_fixed() 
 
 p
 ```
 
-```{r}
-library(topicmodels) 
+##Topic modeling
+
+```{r }
 lda <- LDA(dfmat, 3)
 
 lda
 ```
+
+
 ```{r}
 library(tidytext)
 
@@ -229,10 +277,10 @@ topic_words %>%
 ```{r}
 lex <- get_sentiments("afinn")
 
-text_tokens <- tidy(dfmat) %>% 
+text_tokens <- tidy(dfm_corp) %>% 
   inner_join(lex, by=c("term" = "word"))
 
-doc_sentiments <- tidy(dfmat) %>% 
+doc_sentiments <- tidy(dfm_corp) %>% 
   inner_join(lex, by=c("term" = "word")) %>% 
   mutate(value=value*count) %>% 
   group_by(document) %>%
