@@ -28,6 +28,12 @@ library(tidyr)
 ```{r }
 df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_11_28.csv")
 ```
+
+## Creating party variable
+```{r }
+df$party <- ifelse(df$cosponsor_D_perc > 0.66, "Democrat", ifelse(df$cosponsor_R_perc > 0.66, "Republican", "Both"))
+```
+
 ## Creating a corpus
 ```{r }
 df_corp <- df
@@ -60,7 +66,7 @@ dfmat %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
 dfmat_115 <- dfm(corpus_subset(corp, session == 115), remove = stopwords("english"), remove_punct = TRUE,
                 remove_numbers = TRUE) %>%
   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-    dfm_trim(min_termfreq = 1)
+    dfm_trim(min_termfreq = 3)
 
 textplot_wordcloud(dfmat_115, max_words = 300)
 ```
@@ -91,22 +97,70 @@ textplot_wordcloud(dfmat_117, max_words = 300)
 ```{r }
 #Need to get sponsor party data
 
-dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$Party) %>%
+
+
+
+dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$party) %>%
     dfm_trim(min_termfreq = 3)
 
 textplot_wordcloud(dfmatRepDem, comparison = TRUE, max_words = 300,
-                   color = c("blue", "red"))
+                   color = c("green","blue", "red"))
+
+```
+
+#Wordcloud congress parties 115
+
+```{r }
+
+corp_115 <- df %>% filter(session == 115) %>% rename(text = summary) %>% corpus()
+modelpart15 <- dfm(corp_115, remove = stopwords("english"), remove_punct = TRUE, groups = corp_115$party) %>% dfm_trim(min_termfreq = 3)
+
+mp15 <- textplot_wordcloud(modelpart15, comparison = TRUE, max_words = 300,
+                   color = c("green","blue", "red"))
+mp15
 
 ```
 
 
+
+#Wordcloud congress parties 116
+
+```{r }
+
+corp_116 <- df %>% filter(session == 116) %>% rename(text = summary) %>% corpus()
+modelpart16 <- dfm(corp_116, remove = stopwords("english"), remove_punct = TRUE, groups = corp_116$party) %>% dfm_trim(min_termfreq = 3)
+
+mp16 <- textplot_wordcloud(modelpart16, comparison = TRUE, max_words = 300,
+                   color = c("green","blue", "red"))
+mp16
+
+```
+
+
+#Wordcloud congress parties 117
+
+```{r }
+
+corp_117 <- df %>% filter(session == 117) %>% rename(text = summary) %>% corpus()
+modelpart17 <- dfm(corp_117, remove = stopwords("english"), remove_punct = TRUE, groups = corp_117$party) %>% dfm_trim(min_termfreq = 3)
+
+mp17 <- textplot_wordcloud(modelpart17, comparison = TRUE, max_words = 300,
+                   color = c("green","blue", "red"))
+
+mp17
+
+```
+
+
+
 #Wordcloud comparing Congresses
 ```{r }
-dfmatCon <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$Congress) %>%
+dfmatCon <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$session) %>%
     dfm_trim(min_termfreq = 3)
 
 textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
                    color = c("blue", "red"))
+
 
 ```
 
