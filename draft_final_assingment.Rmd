@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
+```{r }
 library(tidyverse)
 library(quanteda)
 library(quanteda.textstats)
@@ -20,6 +20,7 @@ library(quanteda.textplots)
 library(uwot)
 library(topicmodels)
 library(tidytext)
+library(ggrepel)
 ```
 
 ```{r }
@@ -34,7 +35,7 @@ corp <- corpus(df_corp)
 
 ##Creatung a dfm from the corpus
 ```{r }
-dfm_corp <- corp %>%
+dfmat <- corp %>%
   tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
   tokens_remove(patter = stopwords("en")) %>%
   tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
@@ -49,46 +50,44 @@ dfm_corp <- corp %>%
 
 ##Most common words in the corpus
 ```{r }
-dfm_corp %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
+dfmat %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
 ```
 #Wordcloud congress 115
 
 ```{r }
-dfmat115 <- dfm(corpus_subset(corp, session == 115), remove = stopwords("english"), remove_punct = TRUE,
+dfmat_115 <- dfm(corpus_subset(corp, session == 115), remove = stopwords("english"), remove_punct = TRUE,
                 remove_numbers = TRUE) %>%
   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
     dfm_trim(min_termfreq = 1)
 
-textplot_wordcloud(dfmat115, max_words = 300)
+textplot_wordcloud(dfmat_115, max_words = 300)
 ```
 
 #Wordcloud congress 116
 
 ```{r }
-dfmat116 <- dfm(corpus_subset(corp, session == 116), remove = stopwords("english"), remove_punct = TRUE, 
+dfmat_116 <- dfm(corpus_subset(corp, session == 116), remove = stopwords("english"), remove_punct = TRUE, 
                 remove_numbers = TRUE) %>%
   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
     dfm_trim(min_termfreq = 1)
 
-textplot_wordcloud(dfmat116, max_words = 300)
+textplot_wordcloud(dfmat_116, max_words = 300)
 ```
-
-
 #Wordcloud congress 117
 
 ```{r }
-dfmat117 <- dfm(corpus_subset(corp, session == 117), remove = stopwords("english"), remove_punct = TRUE,
+dfmat_117 <- dfm(corpus_subset(corp, session == 117), remove = stopwords("english"), remove_punct = TRUE,
                 remove_numbers = TRUE) %>%
   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
     dfm_trim(min_termfreq = 1)
 
-textplot_wordcloud(dfmat117, max_words = 300)
+textplot_wordcloud(dfmat_117, max_words = 300)
 ```
 
 
 #Wordcloud comparing Democrats and Republicans
 ```{r }
-#Need to get sponser party data
+#Need to get sponsor party data
 
 dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_punct = TRUE, groups = corp$Party) %>%
     dfm_trim(min_termfreq = 3)
@@ -113,7 +112,7 @@ textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
 ```{r}
 #Overall most common words
 
-tfreq <- dfm_corp %>%
+tfreq <- dfmat %>%
   textstat_frequency() %>%
   head(20)
 
@@ -128,15 +127,6 @@ geom_col() + labs(title="Feature (word) frequency",
 
 ```{r }
 # Most common words by Congressional session 115
-df_115 <- df %>%
-  filter(session == "115")
-
-dfmat_115 <- df_115$summary %>%
-  tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
-  tokens_remove(patter = stopwords("en")) %>%
-  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-  dfm()
-
 tfreq_115 <- dfmat_115 %>%
   textstat_frequency() %>%
   head(20)
@@ -151,15 +141,6 @@ ggplot(tfreq_115, aes(x=frequency, y=feature)) +
 
 ```{r }
 # Most common words by Congressional session 116
-df_116 <- df %>%
-  filter(session == "116")
-
-dfmat_116 <- df_116$summary %>%
-  tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
-  tokens_remove(patter = stopwords("en")) %>%
-  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-  dfm()
-
 tfreq_116 <- dfmat_116 %>%
   textstat_frequency() %>%
   head(20)
@@ -174,15 +155,6 @@ ggplot(tfreq_116, aes(x=frequency, y=feature)) +
 
 ```{r}
 # Most common words by Congressional session 117
-df_117 <- df %>%
-  filter(session == "117")
-
-dfmat_117 <- df_117$summary %>%
-  tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
-  tokens_remove(patter = stopwords("en")) %>%
-  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-  dfm()
-
 tfreq_117 <- dfmat_117 %>%
   textstat_frequency() %>%
   head(20)
@@ -195,19 +167,80 @@ ggplot(tfreq_117, aes(x=frequency, y=feature)) +
   theme_minimal()
 ```
 
-
+##Comparing subgroups
 ```{r}
-df$era <- ifelse(df$session == 116, "Pre", "Post")
+df <- df %>%
+  mutate(session_written = ifelse(session == 115, "session_115", 
+                             ifelse(session == 116, "session_116",
+                             ifelse(session == 117, "session_117", NA))))
 
-ytfreq <- dfm_corp %>% 
-  textstat_frequency(groups = df$era) %>%
+ytfreq <- dfmat %>% 
+  textstat_frequency(groups = df$session_written) %>%
   pivot_wider(id_cols=feature, names_from=group, values_from=frequency)
-              
-ggplot(ytfreq, aes(x="Post", y="Pre")) + 
-  geom_point() +
-  coord_fixed()
 ```
 
+```{r}
+#Comparing sessions 115 and 116
+
+#Plot #1: differences in frequency by session
+ggplot(ytfreq, aes(x= session_116, y= session_115)) + 
+  geom_point() + theme_minimal()
+
+#Plot #2: coloring changes by session
+ytfreq$change_115_116 <- log(ytfreq$session_116 / ytfreq$session_115)
+max_change <- max(abs(ytfreq$change_115_116), na.rm=TRUE)
+
+ggplot(ytfreq, aes(x=session_116, y=session_115, fill=change_115_116)) + 
+  geom_point(color="grey", shape=21) +
+  scale_fill_gradientn(
+    colors = c("#4575b4","white","#d73027"),
+    values = scales::rescale(c(max_change*-1,0,max_change)), limits = c(max_change*-1,max_change))+
+theme_bw()
+
+#Plot 3: labeling words with biggest change
+labels <- ytfreq %>% 
+  rowwise() %>% 
+  mutate(max_value = max(session_116, session_115)) %>% 
+  filter((abs(change_115_116)>0.4 & max_value>2.5) )
+
+ggplot(ytfreq, aes(x=session_116, y=session_115, fill=change_115_116)) + 
+  geom_point(color="grey", shape=21) +
+  scale_fill_gradientn(
+    colors = c("#4575b4","white","#d73027"),
+    values = scales::rescale(c(max_change*-1,0,max_change)), limits = c(max_change*-1,max_change)) + theme_bw() +
+  geom_label_repel(data=labels, aes(label=feature), min.segment.length = 0)
+```
+
+```{r}
+#Comparing sessions 116 and 117
+ggplot(ytfreq, aes(x= session_117, y= session_116)) + 
+  geom_point() + theme_minimal()
+
+
+#Plot #2: coloring changes by session
+ytfreq$change_116_117 <- log(ytfreq$session_117 / ytfreq$session_116)
+max_change <- max(abs(ytfreq$change_116_117), na.rm=TRUE)
+
+ggplot(ytfreq, aes(x=session_117, y=session_116, fill=change_116_117)) + 
+  geom_point(color="grey", shape=21) +
+  scale_fill_gradientn(
+    colors = c("#4575b4","white","#d73027"),
+    values = scales::rescale(c(max_change*-1,0,max_change)), limits = c(max_change*-1,max_change))+
+theme_bw()
+
+#Plot 3: labeling words with biggest change
+labels <- ytfreq %>% 
+  rowwise() %>% 
+  mutate(max_value = max(session_117, session_116)) %>% 
+  filter((abs(change_116_117)>0.4 & max_value>2.5) )
+
+ggplot(ytfreq, aes(x=session_117, y=session_116, fill=change_116_117)) + 
+  geom_point(color="grey", shape=21) +
+  scale_fill_gradientn(
+    colors = c("#4575b4","white","#d73027"),
+    values = scales::rescale(c(max_change*-1,0,max_change)), limits = c(max_change*-1,max_change)) + theme_bw() +
+  geom_label_repel(data=labels, aes(label=feature), min.segment.length = 0)
+```
 
 ```{r}
 sims <- textstat_simil(dfm_corp, method="cosine")
