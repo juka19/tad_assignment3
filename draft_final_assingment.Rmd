@@ -459,9 +459,9 @@ daily_sentiment <- days %>%
 
 daily_sentiment %>% head()
 
-ggplot(daily_sentiment, aes(date, colour=partisan)) +
-  geom_point(aes(y=score), size=0.5) + 
-  geom_line(aes(y=score7)) + theme_minimal()
+ggplot(daily_sentiment, aes(x=date, y = score, colour=partisan)) +
+  geom_point(aes(y=score), size=1) + 
+  geom_line(aes(y=score7)) + theme_minimal() + geom_smooth(method = "lm")
 ```
 
 
