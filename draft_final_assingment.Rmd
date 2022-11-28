@@ -31,6 +31,9 @@ df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/da
 
 ## Creating party variable
 ```{r }
+#if two thirds of the sponsors are democrats, we consider the bill democrat-dominated
+#same for republicans
+#if there is no clear majority, they are "Both"
 df$party <- ifelse(df$cosponsor_D_perc > 0.66, "Democrat", ifelse(df$cosponsor_R_perc > 0.66, "Republican", "Both"))
 ```
 
