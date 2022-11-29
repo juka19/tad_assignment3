@@ -1,0 +1,11 @@
+/*-- scss:defaults --*/
+
+.reveal .custom-title {
+    position: absolute;
+    color: #00589b;
+    font-size: 3em;
+    text-align: right;
+    right: 20px;
+    top: -200px;
+  }
+  

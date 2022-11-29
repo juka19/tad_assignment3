@@ -1,6 +1,11 @@
 ---
 title: "US Congress Data"
-format: revealjs
+format: 
+  revealjs:
+    slide-number: true
+    preview-links: auto
+    footer: footer.html
+    theme: night
 editor: visual
 ---
 

@@ -1,0 +1,109 @@
+---
+title: "Congress text mining"
+title-slide-attributes:
+    data-background-image: /layout/background.jpg
+    title-slide-style: 
+subtitle: "Text as Data Assignment 3"
+date: 01.12.2022
+format:
+    revealjs:
+        code-fold: true
+        code-tools: true
+        theme: sky
+        slide-number: true
+        preview-links: auto
+        footer: "[github.com/juka19/tad_assignment3](https://github.com/juka19/tad_assignment3)"
+        transition: slide
+        transition-speed: fast
+        background-transition: fade
+filters:
+    - reveal-auto-agenda
+    - designmode
+auto-agenda:
+    bullets: numbered
+    heading: Agenda
+auto-play-media: true
+---
+
+
+# Research question
+
+# Data acquisition & preprocessing
+
+## Overview
+- Data from the 115^th^, 116^th^ and 117^th^ US congress 
+- Text summaries of public laws
+- Metadata
+    - sponsors, cosponsors, actions, policy fields, ...
+
+## Data acquisition 
+
+::: {.panel-tabset}
+ 
+### Challenges 
+- Paginated output
+- Multiple API calls for each observation
+- Request limit of 1000 API calls per hour
+
+[Not knowing about bulk download options of ProRepublica... {{< fa regular face-rolling-eyes >}}]{.fragment}
+
+### Code
+
+```{.python }
+@congress_deco(output_format='json')
+def get_congress_data(query:str, *args, api_key=os.getenv('US.GOV_API')) -> dict:
+        
+        hdr = {
+                # specifying requested encoding
+                'Cache-Control': 'no-cache',
+                'charset': 'UTF-8',
+                'X-Api-Key': api_key,
+                'User-Agent': random.choice(['Mozilla/5.0', 'Chrome 104.0.0.0', 
+                                                'Chrome 52.0.2762.73', 'Chrome 55.0.2919.83'])
+                }
+        
+        BASE_URL = 'https://api.congress.gov/v3/'
+        
+        query_url = BASE_URL + query
+        
+        if args: # concatenate variable arguments to url
+                query_url += '&' + '&'.join(args)
+                        
+        return (query_url, hdr)
+```
+
+:::
+## Data acquisition 3
+
+```{.python }
+@congress_deco(output_format='html')
+def get_bill_text(query:str) -> str:
+        
+        hdr = {
+                # specifying requested encoding
+                'Cache-Control': 'no-cache',
+                'charset': 'UTF-8',
+                'User-Agent': random.choice(['Mozilla/5.0', 'Chrome 104.0.0.0', 
+                                                'Chrome 52.0.2762.73', 'Chrome 55.0.2919.83'])
+                }
+        
+        return (query, hdr)
+```
+
+## Data
+
+```{.python}
+import plotly.ex
+
+```
+
+
+## Preprocessing
+
+# Methods
+
+# Results
+
+# Discussion
+
+# Conclusion
