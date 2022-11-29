@@ -23,6 +23,8 @@ library(tidytext)
 library(ggrepel)
 library(vader)
 library(tidyr)
+library(tidymodels) 
+library(textrecipes)
 ```
 
 ```{r }
@@ -490,8 +492,6 @@ daily_sentiment <- days %>%
   arrange(date) %>%
   mutate(score7 = data.table::frollmean(score, 7))
 
-daily_sentiment %>% head()
-
 ggplot(daily_sentiment, aes(x=date, y = score, colour=party)) +
   geom_point(aes(y=score), size=1) + 
   geom_line(aes(y=score7)) + 
@@ -499,28 +499,26 @@ ggplot(daily_sentiment, aes(x=date, y = score, colour=party)) +
   geom_smooth(method = "lm")
 ```
 ```{r}
-summary_sentiment$party_full <- ifelse(summary_sentiment$cosponsor_D_perc == 1.0, "Dem", ifelse(summary_sentiment$cosponsor_R_perc > 1.0, "Rep", "NA"))
+summary_sentiment$party_full <- ifelse(summary_sentiment$cosponsor_D_perc == 1.0, "Dem", ifelse(summary_sentiment$cosponsor_R_perc == 1.0, "Rep", NA))
 
 wide_sentiment_full <- summary_sentiment %>%
-  group_by(party, date) %>%
+  drop_na(party_full) %>%
+  group_by(party_full, date) %>%
   summarise(score = mean(compound)) %>% 
-  pivot_wider(names_from = party, values_from = score) %>%
-  select(-c("Both", "NA")) %>%
-  drop_na(Democrat, Republican)
-
+  pivot_wider(names_from = party_full, values_from = score)
 
 days_115 <- data.frame(date = seq(as.Date("2017-01-01"),as.Date("2018-12-31"),1))
 
 daily_sentiment_115 <- days_115 %>% 
   left_join(wide_sentiment_full) %>% 
-  pivot_longer(cols = -date, names_to="party", values_to="score") %>%
-  group_by(party) %>% 
+  pivot_longer(cols = -date, names_to="party_full", values_to="score") %>%
+  group_by(party_full) %>% 
   arrange(date) %>%
   mutate(score7 = data.table::frollmean(score, 7))
 
 daily_sentiment %>% head()
 
-ggplot(daily_sentiment_115, aes(x=date, y = score, colour=party)) +
+ggplot(daily_sentiment_115, aes(x=date, y = score, colour=party_full)) +
   geom_point(aes(y=score), size=1) + 
   geom_line(aes(y=score7)) + 
   theme_minimal() + 
@@ -532,14 +530,14 @@ days_116 <- data.frame(date = seq(as.Date("2019-01-01"),as.Date("2020-12-31"),1)
 
 daily_sentiment_116 <- days_116 %>% 
   left_join(wide_sentiment_full) %>% 
-  pivot_longer(cols = -date, names_to="party", values_to="score") %>%
-  group_by(party) %>% 
+  pivot_longer(cols = -date, names_to="party_full", values_to="score") %>%
+  group_by(party_full) %>% 
   arrange(date) %>%
   mutate(score7 = data.table::frollmean(score, 7))
 
 daily_sentiment_116 %>% head()
 
-ggplot(daily_sentiment_116, aes(x=date, y = score, colour=party)) +
+ggplot(daily_sentiment_116, aes(x=date, y = score, colour=party_full)) +
   geom_point(aes(y=score), size=1) + 
   geom_line(aes(y=score7)) + 
   theme_minimal() + 
@@ -550,14 +548,98 @@ days_117 <- data.frame(date = seq(as.Date("2021-01-01"),as.Date("2022-12-31"),1)
 
 daily_sentiment_117 <- days_117 %>% 
   left_join(wide_sentiment_full) %>% 
-  pivot_longer(cols = -date, names_to="party", values_to="score") %>%
-  group_by(party) %>% 
+  pivot_longer(cols = -date, names_to="party_full", values_to="score") %>%
+  group_by(party_full) %>% 
   arrange(date) %>%
   mutate(score7 = data.table::frollmean(score, 7))
 
-ggplot(daily_sentiment_117, aes(x=date, y = score, colour=party)) +
+ggplot(daily_sentiment_117, aes(x=date, y = score, colour=party_full)) +
   geom_point(aes(y=score), size=1) + 
   geom_line(aes(y=score7)) + 
   theme_minimal() + 
   geom_smooth(method = "lm")
 ```
+##Some machine learning
+
+```{r}
+#Prediction model to see if can predict if bill is Republican or Democrat
+
+#Keep only bills that are over 66% Democrat or Republican
+df1 <- df %>%
+  filter(party != "Both")
+
+df1 <- df1[sample(nrow(df1)),]
+df1$env <- 0
+df1$env[df1$party == "Republican"] <- 1
+df1$env <- factor(df1$env)
+
+df_split <- initial_split(df1, prop=0.8) 
+train_data <- training(df_split) 
+test_data <- testing(df_split)
+
+rec <- recipe(env ~ summary, data = train_data) %>% 
+  step_tokenize(summary) %>% 
+  step_tokenfilter(summary, max_tokens = 1e3) %>% 
+  step_tfidf(summary)
+
+model <- svm_linear(mode="classification")
+
+wf <- workflow() %>% 
+  add_recipe(rec) %>% 
+  add_model(model)
+
+model_fit <- wf %>% 
+  fit(train_data)
+```
+
+```{r}
+test_data$prediction <- predict(model_fit, test_data)$.pred_class
+
+scorer <- metric_set( yardstick::accuracy, 
+                      yardstick::precision, 
+                      yardstick::recall, 
+                      yardstick::f_meas
+)
+
+scorer(test_data, truth=env, estimate=prediction, event_level="second")
+```
+
+```{r}
+#Prediction model to see if can predict if bill is focusing on health (as policy area)
+
+df2 <- df[sample(nrow(df)),]
+df2$env <- 0
+df2$env[df2$policy_area == "Health"] <- 1
+df2$env <- factor(df2$env)
+
+df_split <- initial_split(df2, prop=0.8) 
+train_data <- training(df_split) 
+test_data <- testing(df_split)
+
+rec <- recipe(env ~ summary, data = train_data) %>% 
+  step_tokenize(summary) %>% 
+  step_tokenfilter(summary, max_tokens = 1e3) %>% 
+  step_tfidf(summary)
+
+model <- svm_linear(mode="classification")
+
+wf <- workflow() %>% 
+  add_recipe(rec) %>% 
+  add_model(model)
+
+model_fit <- wf %>% 
+  fit(train_data)
+```
+
+```{r}
+test_data$prediction <- predict(model_fit, test_data)$.pred_class
+
+scorer <- metric_set( yardstick::accuracy, 
+                      yardstick::precision, 
+                      yardstick::recall, 
+                      yardstick::f_meas
+)
+
+scorer(test_data, truth=env, estimate=prediction, event_level="second")
+```
+
