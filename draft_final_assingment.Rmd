@@ -23,8 +23,6 @@ library(tidytext)
 library(ggrepel)
 library(vader)
 library(tidyr)
-
-
 ```
 
 ```{r }
@@ -39,6 +37,19 @@ df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/da
 df$party <- ifelse(df$cosponsor_D_perc > 0.66, "Democrat", ifelse(df$cosponsor_R_perc > 0.66, "Republican", "Both"))
 ```
 
+```{r}
+ggplot(df, aes(x = cosponsor_D_perc)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.1, fill="blue") +
+  labs(title="Density of bill cosposor party",
+       x ="Cosponsor party composition", y = "Density", 
+       caption = "Numbers represent proportion of cosponsors from Democratic party, 
+       so 0.0 represents bills that were fully Republican and 1.0 represents 
+       bills that were fully Democrat.") +
+  theme_minimal()
+```
+  
+
 ## Creating a corpus
 ```{r }
 df_corp <- df
@@ -51,13 +62,13 @@ corp <- corpus(df_corp)
 dfmat <- corp %>%
   tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
   tokens_remove(patter = stopwords("en")) %>%
-  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  tokens_replace(pattern = lexicon::hash_lemmas$token, replacement = lexicon::hash_lemmas$lemma) %>%
+  tokens_wordstem() %>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "use", "author")) %>%
   dfm()
 
 #Do we also want to lemmatize and apply word stems??
-
 # tokens_replace(pattern = lexicon::hash_lemmas$token, replacement = lexicon::hash_lemmas$lemma) %>%
-
 # tokens_wordstem() %>%
 ```
 
@@ -68,10 +79,7 @@ dfmat %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
 #Wordcloud congress 115
 
 ```{r }
-dfmat_115 <- dfm(corpus_subset(corp, session == 115), remove = stopwords("english"), remove_punct = TRUE,
-                remove_numbers = TRUE) %>%
-  dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-    dfm_trim(min_termfreq = 3)
+dfmat_115 <- dfm_subset(dfmat, session == 115)
 
 textplot_wordcloud(dfmat_115, max_words = 300)
 ```
@@ -79,20 +87,14 @@ textplot_wordcloud(dfmat_115, max_words = 300)
 #Wordcloud congress 116
 
 ```{r }
-dfmat_116 <- dfm(corpus_subset(corp, session == 116), remove = stopwords("english"), remove_punct = TRUE, 
-                remove_numbers = TRUE) %>%
-  dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-    dfm_trim(min_termfreq = 1)
+dfmat_116 <- dfm_subset(dfmat, session == 116)
 
 textplot_wordcloud(dfmat_116, max_words = 300)
 ```
 #Wordcloud congress 117
 
 ```{r }
-dfmat_117 <- dfm(corpus_subset(corp, session == 117), remove = stopwords("english"), remove_punct = TRUE,
-                remove_numbers = TRUE) %>%
-  dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-    dfm_trim(min_termfreq = 1)
+dfmat_117 <- dfm_subset(dfmat, session == 117)
 
 textplot_wordcloud(dfmat_117, max_words = 300)
 ```
@@ -100,18 +102,13 @@ textplot_wordcloud(dfmat_117, max_words = 300)
 
 #Wordcloud comparing Democrats and Republicans
 ```{r }
-#Need to get sponsor party data
-
-
-
-
-dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$party) %>%
-   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-    dfm_trim(min_termfreq = 3)
+dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups =
+                     corp$party) %>%
+  dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm_trim(min_termfreq = 3)
 
 textplot_wordcloud(dfmatRepDem, comparison = TRUE, max_words = 300,
                    color = c("green","blue", "red"))
-
 ```
 
 #Wordcloud congress parties 115
@@ -126,7 +123,6 @@ modelpart15 <- dfm(corp_115, remove = stopwords("english"),remove_numbers = TRUE
 mp15 <- textplot_wordcloud(modelpart15, comparison = TRUE, max_words = 300,
                    color = c("green","blue", "red"))
 mp15
-
 ```
 
 
@@ -161,8 +157,6 @@ mp17
 
 ```
 
-
-
 #Wordcloud comparing Congresses
 ```{r }
 dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
@@ -170,8 +164,6 @@ dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remo
 
 textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
                    color = c("blue", "red"))
-
-
 ```
 
 ## Most common words (overall)
@@ -189,6 +181,61 @@ geom_col() + labs(title="Feature (word) frequency",
         x ="Frequency", y = "Feature") +
   theme_minimal() 
 ```
+## Most common words by party 
+
+```{r}
+#Republicans
+dfmat_r <- dfm_subset(dfmat, party == "Republican")
+
+tfreq_r <- dfmat_r %>%
+  textstat_frequency() %>%
+  head(20)
+
+tfreq_r$feature <- factor(tfreq_r$feature, levels=tfreq_r$feature) 
+
+ggplot(tfreq_r, aes(x=frequency, y=feature)) +
+geom_col() + labs(title="Feature (word) frequency for Republican Bills",
+        x ="Frequency", y = "Feature") +
+  theme_minimal() 
+```
+
+```{r}
+#Democrats
+dfmat_d <- dfm_subset(dfmat, party == "Democrat")
+
+tfreq_d <- dfmat_d %>%
+  textstat_frequency() %>%
+  head(20)
+
+tfreq_d$feature <- factor(tfreq_d$feature, levels=tfreq_d$feature) 
+
+ggplot(tfreq_d, aes(x=frequency, y=feature)) +
+geom_col() + labs(title="Feature (word) frequency for Democrat Bills",
+        x ="Frequency", y = "Feature") +
+  theme_minimal() 
+```
+
+```{r}
+party_corp <- corpus_subset(corp, 
+                            party %in% c("Democrat", "Republican"))
+
+# Create a dfm grouped by party
+party_dfm <- tokens(party_corp, remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  tokens_replace(pattern = lexicon::hash_lemmas$token, replacement = lexicon::hash_lemmas$lemma) %>%
+  tokens_wordstem() %>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "use", "author", "may")) %>%
+  tokens_group(groups = party) %>%
+  dfm()
+
+# Calculate keyness and determine Republican as target group
+result_keyness <- textstat_keyness(party_dfm, target = "Republican")
+
+# Plot estimated word keyness
+textplot_keyness(result_keyness) 
+```
+
+
 ## Most common words (by session)
 
 ```{r }
@@ -309,7 +356,7 @@ ggplot(ytfreq, aes(x=session_117, y=session_116, fill=change_116_117)) +
 ```
 
 ```{r}
-sims <- textstat_simil(dfm_corp, method="cosine")
+sims <- textstat_simil(dfmat, method="cosine")
 
 sim_df <- as.data.frame(sims, upper = TRUE)
 
@@ -317,14 +364,9 @@ sim_df
 ```
 
 ```{r }
-df <- df %>%
-  mutate(partisan = ifelse(cosponsor_D_perc > 0.5,"Dem", 
-                       ifelse(cosponsor_D_perc < 0.5,"Rep",
-                              ifelse(cosponsor_D_perc == 0.5,"Neutral", NA))))
+corp2 <- corpus(df$summary)
 
-corp <- corpus(df$summary)
-
-dfmat2 <- corp %>%
+dfmat2 <- corp2 %>%
   tokens(remove_punct = TRUE) %>%
   tokens_remove(patter = stopwords("en")) %>%
   dfm() %>%
@@ -335,15 +377,12 @@ embeddings <- umap(as.matrix(dfmat2))
 df$x <- embeddings[,1]
 df$y <- embeddings[,2]
 
-colordict <- c( "Dem"="blue","Rep"="red", "Neutral"="yellow")
+colordict <- c( "Democrat"="blue","Republican"="red", "Both"="yellow")
 
-p <- ggplot(df, aes(x, y, fill=partisan)) + 
+ggplot(df, aes(x, y, fill=party)) + 
   geom_point(color="grey", shape=21, size=0.5) + 
   scale_fill_manual(values=colordict) +
-  theme_bw() +
-  coord_fixed() 
-
-p
+  theme_bw()
 ```
 
 ##Topic modeling
@@ -434,34 +473,91 @@ summary_sentiment <- read_csv("https://raw.githubusercontent.com/juka19/tad_assi
 
 
 ```{r}
-library(tidyr)
-#tweet_sentiment$date <- as.Date(tweet_sentiment$created) 
-summary_sentiment <- summary_sentiment %>%
-  mutate(partisan = ifelse(cosponsor_D_perc > 0.5,"Dem", 
-                       ifelse(cosponsor_D_perc < 0.5,"Rep",
-                              ifelse(cosponsor_D_perc == 0.5,"Neutral", NA))))
-
+summary_sentiment$party <- ifelse(summary_sentiment$cosponsor_D_perc > 0.66, "Democrat", ifelse(summary_sentiment$cosponsor_R_perc > 0.66, "Republican", "Both"))
+  
 wide_sentiment <- summary_sentiment %>%
-  group_by(partisan, date) %>%
+  group_by(party, date) %>%
   summarise(score = mean(compound)) %>% 
-  pivot_wider(names_from = partisan, values_from = score) %>%
-  select(-c("Neutral", "NA"))
-
+  pivot_wider(names_from = party, values_from = score) %>%
+  select(-c("Both", "NA"))
 
 days <- data.frame(date = seq(as.Date("2017-01-01"),as.Date("2022-12-31"),1))
 
 daily_sentiment <- days %>% 
   left_join(wide_sentiment) %>% 
-  pivot_longer(cols = -date, names_to="partisan", values_to="score") %>%
-  group_by(partisan) %>% 
+  pivot_longer(cols = -date, names_to="party", values_to="score") %>%
+  group_by(party) %>% 
   arrange(date) %>%
   mutate(score7 = data.table::frollmean(score, 7))
 
 daily_sentiment %>% head()
 
-ggplot(daily_sentiment, aes(x=date, y = score, colour=partisan)) +
+ggplot(daily_sentiment, aes(x=date, y = score, colour=party)) +
   geom_point(aes(y=score), size=1) + 
-  geom_line(aes(y=score7)) + theme_minimal() + geom_smooth(method = "lm")
+  geom_line(aes(y=score7)) + 
+  theme_minimal() + 
+  geom_smooth(method = "lm")
+```
+```{r}
+summary_sentiment$party_full <- ifelse(summary_sentiment$cosponsor_D_perc == 1.0, "Dem", ifelse(summary_sentiment$cosponsor_R_perc > 1.0, "Rep", "NA"))
+
+wide_sentiment_full <- summary_sentiment %>%
+  group_by(party, date) %>%
+  summarise(score = mean(compound)) %>% 
+  pivot_wider(names_from = party, values_from = score) %>%
+  select(-c("Both", "NA")) %>%
+  drop_na(Democrat, Republican)
+
+
+days_115 <- data.frame(date = seq(as.Date("2017-01-01"),as.Date("2018-12-31"),1))
+
+daily_sentiment_115 <- days_115 %>% 
+  left_join(wide_sentiment_full) %>% 
+  pivot_longer(cols = -date, names_to="party", values_to="score") %>%
+  group_by(party) %>% 
+  arrange(date) %>%
+  mutate(score7 = data.table::frollmean(score, 7))
+
+daily_sentiment %>% head()
+
+ggplot(daily_sentiment_115, aes(x=date, y = score, colour=party)) +
+  geom_point(aes(y=score), size=1) + 
+  geom_line(aes(y=score7)) + 
+  theme_minimal() + 
+  geom_smooth(method = "lm")
 ```
 
+```{r}
+days_116 <- data.frame(date = seq(as.Date("2019-01-01"),as.Date("2020-12-31"),1))
 
+daily_sentiment_116 <- days_116 %>% 
+  left_join(wide_sentiment_full) %>% 
+  pivot_longer(cols = -date, names_to="party", values_to="score") %>%
+  group_by(party) %>% 
+  arrange(date) %>%
+  mutate(score7 = data.table::frollmean(score, 7))
+
+daily_sentiment_116 %>% head()
+
+ggplot(daily_sentiment_116, aes(x=date, y = score, colour=party)) +
+  geom_point(aes(y=score), size=1) + 
+  geom_line(aes(y=score7)) + 
+  theme_minimal() + 
+  geom_smooth(method = "lm")
+```
+```{r}
+days_117 <- data.frame(date = seq(as.Date("2021-01-01"),as.Date("2022-12-31"),1))
+
+daily_sentiment_117 <- days_117 %>% 
+  left_join(wide_sentiment_full) %>% 
+  pivot_longer(cols = -date, names_to="party", values_to="score") %>%
+  group_by(party) %>% 
+  arrange(date) %>%
+  mutate(score7 = data.table::frollmean(score, 7))
+
+ggplot(daily_sentiment_117, aes(x=date, y = score, colour=party)) +
+  geom_point(aes(y=score), size=1) + 
+  geom_line(aes(y=score7)) + 
+  theme_minimal() + 
+  geom_smooth(method = "lm")
+```
