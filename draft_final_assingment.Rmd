@@ -462,7 +462,7 @@ summary_sentiment <- read_csv("https://raw.githubusercontent.com/juka19/tad_assi
 ggplot(summary_sentiment, aes(x = compound)) + 
   geom_histogram(aes(y=..density..), colour="black", fill="white") +
   geom_density(alpha=.1, fill="blue") +
-  labs(title="Density of compount sentiment scores",
+  labs(title="Density of compound sentiment scores",
        x ="Sentiment scores", y = "Density") +
   theme_minimal()
 ```
