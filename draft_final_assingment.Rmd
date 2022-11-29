@@ -452,27 +452,20 @@ topic_words_117 %>%
 ```
 
 ##Sentiments
-```{r}
-lex <- get_sentiments("afinn")
-
-text_tokens <- tidy(dfmat) %>% 
-  inner_join(lex, by=c("term" = "word"))
-
-doc_sentiments <- tidy(dfmat) %>% 
-  inner_join(lex, by=c("term" = "word")) %>% 
-  mutate(value=value*count) %>% 
-  group_by(document) %>%
-  summarise(value = sum(value))
-
-doc_sentiments
-```
 
 ```{r}
 #Loading df with VADER compount scores
 
 summary_sentiment <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_w_vader.csv")
 ```
-
+```{r}
+ggplot(summary_sentiment, aes(x = compound)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.1, fill="blue") +
+  labs(title="Density of compound sentiment scores",
+       x ="Sentiment scores", y = "Density") +
+  theme_minimal()
+```
 
 ```{r}
 summary_sentiment$party <- ifelse(summary_sentiment$cosponsor_D_perc > 0.66, "Democrat", ifelse(summary_sentiment$cosponsor_R_perc > 0.66, "Republican", "Both"))
