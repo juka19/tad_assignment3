@@ -506,24 +506,13 @@
 </div>
 </div>
 </section>
-<section id="data-acquisition-3" class="slide level2">
-<h2>Data acquisition 3</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="at">@congress_deco</span>(output_format<span class="op">=</span><span class="st">'html'</span>)</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">def</span> get_bill_text(query:<span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
-<span id="cb2-3"><a href="#cb2-3"></a>        </span>
-<span id="cb2-4"><a href="#cb2-4"></a>        hdr <span class="op">=</span> {</span>
-<span id="cb2-5"><a href="#cb2-5"></a>                <span class="co"># specifying requested encoding</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>                <span class="st">'Cache-Control'</span>: <span class="st">'no-cache'</span>,</span>
-<span id="cb2-7"><a href="#cb2-7"></a>                <span class="st">'charset'</span>: <span class="st">'UTF-8'</span>,</span>
-<span id="cb2-8"><a href="#cb2-8"></a>                <span class="st">'User-Agent'</span>: random.choice([<span class="st">'Mozilla/5.0'</span>, <span class="st">'Chrome 104.0.0.0'</span>, </span>
-<span id="cb2-9"><a href="#cb2-9"></a>                                                <span class="st">'Chrome 52.0.2762.73'</span>, <span class="st">'Chrome 55.0.2919.83'</span>])</span>
-<span id="cb2-10"><a href="#cb2-10"></a>                }</span>
-<span id="cb2-11"><a href="#cb2-11"></a>        </span>
-<span id="cb2-12"><a href="#cb2-12"></a>        <span class="cf">return</span> (query, hdr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
 <section id="data" class="slide level2">
 <h2>Data</h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="im">import</span> plotly.ex</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="im">import</span> plotly.express <span class="im">as</span> px</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"data</span><span class="ch">\\</span><span class="st">data_28_11_sponsors.csv"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5"></a></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="preprocessing" class="slide level2">
 <h2>Preprocessing</h2>

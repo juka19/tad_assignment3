@@ -73,27 +73,15 @@ def get_congress_data(query:str, *args, api_key=os.getenv('US.GOV_API')) -> dict
 ```
 
 :::
-## Data acquisition 3
-
-```{.python }
-@congress_deco(output_format='html')
-def get_bill_text(query:str) -> str:
-        
-        hdr = {
-                # specifying requested encoding
-                'Cache-Control': 'no-cache',
-                'charset': 'UTF-8',
-                'User-Agent': random.choice(['Mozilla/5.0', 'Chrome 104.0.0.0', 
-                                                'Chrome 52.0.2762.73', 'Chrome 55.0.2919.83'])
-                }
-        
-        return (query, hdr)
-```
 
 ## Data
 
 ```{.python}
-import plotly.ex
+import plotly.express as px
+import pandas as pd
+
+df = pd.read_csv("data\\data_28_11_sponsors.csv")
+
 
 ```
 
