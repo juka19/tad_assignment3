@@ -28,6 +28,8 @@ jupyter: python3
 
 # Research question
 
+::: columns
+::: {.column width="80%"}
 -   between 2016 and 2022 there have been major shifts in terms of majorities in the US congress:
 
     -   in 2016, both chambers were hold by Republicans
@@ -39,6 +41,12 @@ jupyter: python3
 -   While one might expect that the post 2016 and 2020 congresses will vary in their topics and policies. However, it is interesting to also focus on the period between 2018 and 2020: When both chambers had different majorities and needed to cooperate.
 
 -   We will focus on the question on whether and how the different majorities had an impact on the policies that have been passed by Congress.
+:::
+
+::: {.column width="20%"}
+![](https://www.politico.com/dims4/default/0ba7efa/2147483647/strip/true/crop/1160x773+0+0/resize/1290x860!/quality/90/?url=https%253A%252F%252Fstatic.politico.com%252Fa3%252F2c%252Ffbd235e445b4a96e0373e3060e3c%252Fgettyimages-1294351903-1.jpg){width="300"}
+:::
+:::
 
 # Data acquisition & preprocessing
 
