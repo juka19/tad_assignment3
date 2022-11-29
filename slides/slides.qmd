@@ -26,31 +26,43 @@ auto-play-media: true
 jupyter: python3
 ---
 
-
 # Research question
+
+-   between 2016 and 2022 there have been major shifts in terms of majorities in the US congress:
+
+    -   in 2016, both chambers were hold by Republicans
+
+    -   in 2018, the Democrats gained a majority in Congress
+
+    -   in 2020 the Democrats gained Congress and Senate
+
+-   While one might expect that the post 2016 and 2020 congresses will vary in their topics and policies. However, it is interesting to also focus on the period between 2018 and 2020: When both chambers had different majorities and needed to cooperate.
+
+-   We will focus on the question on whether and how the different majorities had an impact on the policies that have been passed by Congress.
 
 # Data acquisition & preprocessing
 
 ## Overview
-- Data from the 115^th^, 116^th^ and 117^th^ US congress 
-- Text summaries of public laws
-- Metadata
-    - sponsors, cosponsors, actions, policy fields, ...
 
-## Data acquisition 
+-   Data from the 115^th^, 116^th^ and 117^th^ US congress
+-   Text summaries of public laws
+-   Metadata
+    -   sponsors, cosponsors, actions, policy fields, ...
 
-::: {.panel-tabset}
- 
-### Challenges 
-- Paginated output
-- Multiple API calls for each observation
-- Request limit of 1000 API calls per hour
+## Data acquisition
+
+::: panel-tabset
+### Challenges
+
+-   Paginated output
+-   Multiple API calls for each observation
+-   Request limit of 1000 API calls per hour
 
 [Not knowing about bulk download options of ProRepublica... {{< fa regular face-rolling-eyes >}}]{.fragment}
 
 ### Code
 
-```{.python }
+``` python
 @congress_deco(output_format='json')
 def get_congress_data(query:str, *args, api_key=os.getenv('US.GOV_API')) -> dict:
         
@@ -72,7 +84,6 @@ def get_congress_data(query:str, *args, api_key=os.getenv('US.GOV_API')) -> dict
                         
         return (query_url, hdr)
 ```
-
 :::
 
 ## Data
