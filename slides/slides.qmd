@@ -23,6 +23,7 @@ auto-agenda:
     bullets: numbered
     heading: Agenda
 auto-play-media: true
+jupyter: python3
 ---
 
 
@@ -76,15 +77,13 @@ def get_congress_data(query:str, *args, api_key=os.getenv('US.GOV_API')) -> dict
 
 ## Data
 
-```{.python}
-import plotly.express as px
-import pandas as pd
+## Share of Cosponsors across Policy fields
 
-df = pd.read_csv("data\\data_28_11_sponsors.csv")
-
-
+```{python, fullscreen=true}
+import plotly.io as pio
+fig = pio.read_json('plots\\polar_line_plot')
+fig.show()
 ```
-
 
 ## Preprocessing
 

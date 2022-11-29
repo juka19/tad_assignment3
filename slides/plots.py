@@ -13,34 +13,38 @@ grp_dat =(spons_df
 )
 grp_dat['perc'] = grp_dat.groupby('number')['cosponsor_name'].apply(lambda x: x*100/x.sum())
 
-test = grp_dat.merge(df, left_on='number', right_on='bill.number')
-test = test[test['cosponsor_party'] == 'D'].groupby(['session', 'policy_area']).agg({'perc': 'mean'}).reset_index()
+df_final = grp_dat.merge(df, left_on='number', right_on='bill.number')
+
+df_final = df_final[df_final['cosponsor_party'] == 'D'].groupby(['session', 'policy_area']).agg({'perc': 'mean'}).reset_index()
 
 a = px.colors.qualitative.T10[2]
 b = px.colors.qualitative.T10[-1]
 c = px.colors.qualitative.T10[0]
 
+df_final.sort_values(by=['session', 'policy_area'], inplace=True)
+df_final = df_final[df_final['policy_area'] != 'Housing and Community Development']
+plot_df = df_final.round(1)
 fig = px.line_polar(
-    test, 
+    plot_df, 
     r='perc',
     theta='policy_area',
     color='session',
     line_close=True,
     color_discrete_sequence=[a,b,c],
     # color_discrete_sequence=px.colors.sequential.Plasma_r,
-    template='plotly_dark',
-    custom_data=['perc', 'policy_area', 'session']
+    template='plotly_dark'
               )
 
 fig.update_layout(showlegend=False)
-fig.update_layout(font_size=6, font_color='#000000')
-fig.update_traces(hovertemplate='Session: %{customdata[2]} <br>Policy Area: %{customdata[1]} <br>Democratic Cosponsors: %{customdata[0]:.0%}')
-fig.update_layout(
-    paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)'
-)
-fig.update_polars('rgba(0,0,0,0)')
+fig.update_layout(font_size=6)
+fig.update_traces(hovertemplate='Policy Area: %{theta} <br>Democratic Cosponsors: %{r}')
+# fig.update_layout(
+#     paper_bgcolor='rgba(0,0,0,0)',
+#     plot_bgcolor='rgba(0,0,0,0)'
+# )
 fig.show()
 
+
+fig.to_plotly_json('')
 
 
