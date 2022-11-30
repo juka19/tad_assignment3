@@ -2,15 +2,15 @@
 title: "draft_final_assignment"
 author: "Andrew Wells"
 date: "11/18/2022"
-output: html_document
+output: 
+  html_document:
+    toc: TRUE
+    theme: cosmo
+    toc_float: TRUE
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-```{r }
 library(tidyverse)
 library(quanteda)
 library(quanteda.textstats)
@@ -27,6 +27,7 @@ library(tidymodels)
 library(textrecipes)
 library(plotly)
 ```
+
 
 ```{r }
 df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_11_28.csv")
@@ -61,7 +62,7 @@ df_corp <- df_corp %>% rename(text = summary)
 corp <- corpus(df_corp)
 ```
 
-##Creatung a dfm from the corpus
+## Creatung a dfm from the corpus
 ```{r }
 dfmat <- corp %>%
   tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
@@ -76,36 +77,39 @@ dfmat <- corp %>%
 # tokens_wordstem() %>%
 ```
 
-##Most common words in the corpus
+## Most common words in the corpus
 ```{r }
 dfmat %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
 ```
-#Wordcloud congress 115
 
-```{r }
+# Wordclouds
+
+## Wordcloud congress 115
+
+```{r, wa }
 dfmat_115 <- dfm_subset(dfmat, session == 115)
 
 textplot_wordcloud(dfmat_115, max_words = 300)
 ```
 
-#Wordcloud congress 116
+## Wordcloud congress 116
 
-```{r }
+```{r, wa }
 dfmat_116 <- dfm_subset(dfmat, session == 116)
 
 textplot_wordcloud(dfmat_116, max_words = 300)
 ```
-#Wordcloud congress 117
+## Wordcloud congress 117
 
-```{r }
+```{r, wa }
 dfmat_117 <- dfm_subset(dfmat, session == 117)
 
 textplot_wordcloud(dfmat_117, max_words = 300)
 ```
 
 
-#Wordcloud comparing Democrats and Republicans
-```{r }
+## Wordcloud comparing Democrats and Republicans
+```{r, wa }
 dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups =
                      corp$party) %>%
   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
@@ -115,9 +119,9 @@ textplot_wordcloud(dfmatRepDem, comparison = TRUE, max_words = 300,
                    color = c("green","blue", "red"))
 ```
 
-#Wordcloud congress parties 115
+## Wordcloud congress parties 115
 
-```{r }
+```{r, wa }
 
 corp_115 <- df %>% filter(session == 115) %>% rename(text = summary) %>% corpus()
 modelpart15 <- dfm(corp_115, remove = stopwords("english"),remove_numbers = TRUE, remove_punct = TRUE, groups = corp_115$party) %>%
@@ -130,10 +134,9 @@ mp15
 ```
 
 
+## Wordcloud congress parties 116
 
-#Wordcloud congress parties 116
-
-```{r }
+```{r, wa }
 
 corp_116 <- df %>% filter(session == 116) %>% rename(text = summary) %>% corpus()
 modelpart16 <- dfm(corp_116, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp_116$party) %>% dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
@@ -146,9 +149,9 @@ mp16
 ```
 
 
-#Wordcloud congress parties 117
+## Wordcloud congress parties 117
 
-```{r }
+```{r, wa }
 
 corp_117 <- df %>% filter(session == 117) %>% rename(text = summary) %>% corpus()
 modelpart17 <- dfm(corp_117, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp_117$party) %>% dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
@@ -161,8 +164,8 @@ mp17
 
 ```
 
-#Wordcloud comparing Congresses
-```{r }
+## Wordcloud comparing Congresses
+```{r, wa }
 dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
   dfm_trim(min_termfreq = 3)
 
@@ -171,7 +174,7 @@ textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
 ```
 
 ## Most common words (overall)
-```{r}
+```{r, warning=FALSE}
 #Overall most common words
 
 tfreq <- dfmat %>%
@@ -187,7 +190,7 @@ geom_col() + labs(title="Feature (word) frequency",
 ```
 ## Most common words by party 
 
-```{r}
+```{r, warning=FALSE}
 #Republicans
 dfmat_r <- dfm_subset(dfmat, party == "Republican")
 
@@ -203,7 +206,7 @@ geom_col() + labs(title="Feature (word) frequency for Republican Bills",
   theme_minimal() 
 ```
 
-```{r}
+```{r, warning=FALSE}
 #Democrats
 dfmat_d <- dfm_subset(dfmat, party == "Democrat")
 
@@ -219,7 +222,7 @@ geom_col() + labs(title="Feature (word) frequency for Democrat Bills",
   theme_minimal() 
 ```
 
-```{r}
+```{r, warning=FALSE}
 party_corp <- corpus_subset(corp, 
                             party %in% c("Democrat", "Republican"))
 
@@ -242,7 +245,7 @@ textplot_keyness(result_keyness)
 
 ## Most common words (by session)
 
-```{r }
+```{r, warning=FALSE}
 # Most common words by Congressional session 115
 tfreq_115 <- dfmat_115 %>%
   textstat_frequency() %>%
@@ -256,7 +259,7 @@ ggplot(tfreq_115, aes(x=frequency, y=feature)) +
   theme_minimal()
 ```
 
-```{r }
+```{r, warning=FALSE}
 # Most common words by Congressional session 116
 tfreq_116 <- dfmat_116 %>%
   textstat_frequency() %>%
@@ -270,7 +273,7 @@ ggplot(tfreq_116, aes(x=frequency, y=feature)) +
   theme_minimal()
 ```
 
-```{r}
+```{r, warning=FALSE}
 # Most common words by Congressional session 117
 tfreq_117 <- dfmat_117 %>%
   textstat_frequency() %>%
@@ -284,8 +287,8 @@ ggplot(tfreq_117, aes(x=frequency, y=feature)) +
   theme_minimal()
 ```
 
-##Comparing subgroups
-```{r}
+## Comparing subgroups
+```{r, warning=FALSE}
 df <- df %>%
   mutate(session_written = ifelse(session == 115, "session_115", 
                              ifelse(session == 116, "session_116",
@@ -359,15 +362,21 @@ ggplot(ytfreq, aes(x=session_117, y=session_116, fill=change_116_117)) +
   geom_label_repel(data=labels, aes(label=feature), min.segment.length = 0)
 ```
 
+
+
+
+
+
+
 ```{r}
-sims <- textstat_simil(dfmat, method="cosine")
-
-sim_df <- as.data.frame(sims, upper = TRUE)
-
-sim_df
+# sims <- textstat_simil(dfmat, method="cosine")
+# 
+# sim_df <- as.data.frame(sims, upper = TRUE)
+# 
+# sim_df
 ```
 
-##Dimensionality plotting
+## Dimensionality plotting
 
 ```{r }
 corp2 <- corpus(df$summary)
@@ -425,7 +434,7 @@ j
 ggplotly(j)
 ```
 
-##Topic modeling
+## Topic modeling
 
 ```{r }
 #Topics for session 115 (2017 - 2018)
@@ -489,7 +498,7 @@ topic_words_117 %>%
   facet_wrap(~ topic, scales = "free") + scale_y_reordered() + theme_minimal()
 ```
 
-##Sentiments
+## Sentiments
 
 ```{r}
 #Loading df with VADER compount scores
@@ -590,7 +599,7 @@ ggplot(daily_sentiment_117, aes(x=date, y = score, colour=party_full)) +
   theme_minimal() + 
   geom_smooth(method = "lm")
 ```
-##Some machine learning
+## Some machine learning
 
 ```{r}
 #Prediction model to see if can predict if bill is Republican or Democrat
