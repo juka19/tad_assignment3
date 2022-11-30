@@ -1,0 +1,141 @@
+---
+title: "aw_final_assignment"
+author: "Andrew Wells"
+date: "11/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE}
+library(tidyverse)
+library(quanteda)
+library(quanteda.textstats)
+library(ggplot2)
+library(gridExtra) 
+library(readr)
+library(dplyr)
+library(quanteda.textplots)
+library(uwot)
+library(topicmodels)
+library(tidytext)
+library(ggrepel)
+library(vader)
+library(tidyr)
+library(tidymodels) 
+library(textrecipes)
+library(plotly)
+```
+
+```{r, warning=FALSE}
+df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_11_28.csv")
+
+df$party <- ifelse(df$cosponsor_D_perc > 0.66, "Democrat", ifelse(df$cosponsor_R_perc > 0.66, "Republican", "Both"))
+```
+
+## Density of bill cosponsors
+```{r, warning=FALSE}
+
+p <- ggplot(df, aes(x = cosponsor_D_perc)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.1, fill="blue") +
+  labs(title="Density of bill cosposor party",
+       x ="Cosponsor party composition", y = "Density", 
+       caption = "Numbers represent proportion of cosponsors from Democratic party, 
+       so 0.0 represents bills that were fully Republican and 1.0 represents 
+       bills that were fully Democrat.") +
+  theme_minimal()
+
+ggplotly(p)
+```
+
+```{r, warning=FALSE}
+p1 <- df %>%
+  filter(party == "Republican") %>%
+  ggplot(aes(factor(policy_area))) +
+  geom_bar(stat="count", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1") + 
+    labs(title="Policy areas addressed by Republican bills",
+       x ="Count", y = "Policy areas") +
+  theme_minimal() +
+  coord_flip()
+
+p2 <- df %>%
+  filter(party == "Democrat") %>%
+  ggplot(aes(factor(policy_area))) +
+  geom_bar(stat="count", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1") + 
+    labs(title="Policy areas addressed by Democrat bills",
+       x ="Count", y = "Policy areas") +
+  theme_minimal() +
+  coord_flip()
+
+grid.arrange(p1, p2, nrow = 1)
+```
+
+##Dimensionality plotting
+
+```{r }
+corp2 <- corpus(df$summary)
+
+dfmat2 <- corp2 %>%
+  tokens(remove_punct = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  dfm() %>%
+  dfm_trim(min_termfreq = 5)
+
+embeddings <- umap(as.matrix(dfmat2)) 
+
+df$x <- embeddings[,1]
+df$y <- embeddings[,2]
+
+colordict <- c( "Democrat"="blue","Republican"="red", "Both"="yellow")
+
+p3 <- ggplot(df, aes(x, y, fill=party)) + 
+  geom_point(color="grey", shape=21, size=0.5) + 
+  scale_fill_manual(values=colordict) +
+  theme_bw()
+
+ggplotly(p3)
+```
+
+##Sentiment analysis
+
+```{r}
+summary_sentiment <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_w_vader.csv")
+
+summary_sentiment$party <- ifelse(summary_sentiment$cosponsor_D_perc > 0.66, "Democrat", ifelse(summary_sentiment$cosponsor_R_perc > 0.66, "Republican", "Both"))
+  
+wide_sentiment <- summary_sentiment %>%
+  group_by(party, date) %>%
+  summarise(score = mean(compound)) %>% 
+  pivot_wider(names_from = party, values_from = score) %>%
+  select(-c("Both", "NA"))
+
+days <- data.frame(date = seq(as.Date("2017-01-01"),as.Date("2022-12-31"),1))
+
+daily_sentiment <- days %>% 
+  left_join(wide_sentiment) %>% 
+  pivot_longer(cols = -date, names_to="party", values_to="score")
+
+p4 <- ggplot(daily_sentiment, aes(x=date, y = score, colour=party)) +
+  geom_point(aes(y=score), size=1) + 
+  theme_minimal() + 
+  geom_smooth(method = "loess", se = FALSE)
+
+ggplotly(p4)
+```
+
+
+
+
+
+
+
+
+
+
+
+
