@@ -8,6 +8,22 @@ output:
     theme: cosmo
     toc_float: TRUE
 ---
+# Research question
+
+-   between 2016 and 2022 there have been major shifts in terms of majorities in the US congress:
+
+    -   in 2016, both chambers were hold by Republicans
+
+    -   in 2018, the Democrats gained a majority in Congress
+
+    -   in 2020 the Democrats gained Congress and Senate
+
+-   While one might expect that the post 2016 and 2020 congresses will vary in their topics and policies. However, it is interesting to also focus on the period between 2018 and 2020: When both chambers had different majorities and needed to cooperate.
+
+-   We will focus on the question on whether and how the different majorities had an impact on the policies that have been passed by Congress.
+
+![](https://www.politico.com/dims4/default/0ba7efa/2147483647/strip/true/crop/1160x773+0+0/resize/1290x860!/quality/90/?url=https%253A%252F%252Fstatic.politico.com%252Fa3%252F2c%252Ffbd235e445b4a96e0373e3060e3c%252Fgettyimages-1294351903-1.jpg){width="400"}
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -28,12 +44,12 @@ library(textrecipes)
 library(plotly)
 ```
 
-
 ```{r }
 df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_11_28.csv")
 ```
 
 ## Creating party variable
+
 ```{r }
 #if two thirds of the sponsors are democrats, we consider the bill democrat-dominated
 #same for republicans
@@ -53,9 +69,9 @@ ggplot(df, aes(x = cosponsor_D_perc)) +
        bills that were fully Democrat.") +
   theme_minimal()
 ```
-  
 
 ## Creating a corpus
+
 ```{r }
 df_corp <- df
 df_corp <- df_corp %>% rename(text = summary)
@@ -63,6 +79,7 @@ corp <- corpus(df_corp)
 ```
 
 ## Creatung a dfm from the corpus
+
 ```{r }
 dfmat <- corp %>%
   tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
@@ -78,11 +95,46 @@ dfmat <- corp %>%
 ```
 
 ## Most common words in the corpus
+
 ```{r }
 dfmat %>% colSums() %>% sort(decreasing = TRUE) %>% head(20)
 ```
 
 # Wordclouds
+
+## Most common words in all congresses
+
+```{r, warning = FALSE}
+
+dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm_trim(min_termfreq = 3)
+
+textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
+                   color = c("blue", "red"))
+
+#Wordcloud congress 115
+```
+
+## Comparing the 115th and 116th congress
+
+```{r, warning = FALSE}
+
+dfmat_115 <- dfm_subset(dfmat, session == 115)
+corp_115 <- df %>% filter(session == 115) %>% rename(text = summary) %>% corpus()
+modelpart15 <- dfm(corp_115, remove = stopwords("english"),remove_numbers = TRUE, remove_punct = TRUE, groups = corp_115$party) %>%
+   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm_trim(min_termfreq = 3)
+
+mp15 <- textplot_wordcloud(modelpart15, comparison = TRUE, max_words = 300,
+                   color = c("green","blue", "red"))
+
+corp_116 <- df %>% filter(session == 116) %>% rename(text = summary) %>% corpus()
+modelpart16 <- dfm(corp_116, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp_116$party) %>% dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm_trim(min_termfreq = 3)
+
+mp16 <- textplot_wordcloud(modelpart16, comparison = TRUE, max_words = 300,
+                   color = c("green","blue", "red"))
+```
 
 ## Wordcloud congress 115
 
@@ -99,6 +151,7 @@ dfmat_116 <- dfm_subset(dfmat, session == 116)
 
 textplot_wordcloud(dfmat_116, max_words = 300)
 ```
+
 ## Wordcloud congress 117
 
 ```{r, wa }
@@ -107,8 +160,8 @@ dfmat_117 <- dfm_subset(dfmat, session == 117)
 textplot_wordcloud(dfmat_117, max_words = 300)
 ```
 
-
 ## Wordcloud comparing Democrats and Republicans
+
 ```{r, wa }
 dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups =
                      corp$party) %>%
@@ -133,7 +186,6 @@ mp15 <- textplot_wordcloud(modelpart15, comparison = TRUE, max_words = 300,
 mp15
 ```
 
-
 ## Wordcloud congress parties 116
 
 ```{r, wa }
@@ -147,7 +199,6 @@ mp16 <- textplot_wordcloud(modelpart16, comparison = TRUE, max_words = 300,
 mp16
 
 ```
-
 
 ## Wordcloud congress parties 117
 
@@ -165,6 +216,7 @@ mp17
 ```
 
 ## Wordcloud comparing Congresses
+
 ```{r, wa }
 dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
   dfm_trim(min_termfreq = 3)
@@ -174,6 +226,7 @@ textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
 ```
 
 ## Most common words (overall)
+
 ```{r, warning=FALSE}
 #Overall most common words
 
@@ -188,7 +241,8 @@ geom_col() + labs(title="Feature (word) frequency",
         x ="Frequency", y = "Feature") +
   theme_minimal() 
 ```
-## Most common words by party 
+
+## Most common words by party
 
 ```{r, warning=FALSE}
 #Republicans
@@ -242,7 +296,6 @@ result_keyness <- textstat_keyness(party_dfm, target = "Republican")
 textplot_keyness(result_keyness) 
 ```
 
-
 ## Most common words (by session)
 
 ```{r, warning=FALSE}
@@ -288,6 +341,7 @@ ggplot(tfreq_117, aes(x=frequency, y=feature)) +
 ```
 
 ## Comparing subgroups
+
 ```{r, warning=FALSE}
 df <- df %>%
   mutate(session_written = ifelse(session == 115, "session_115", 
@@ -361,12 +415,6 @@ ggplot(ytfreq, aes(x=session_117, y=session_116, fill=change_116_117)) +
     values = scales::rescale(c(max_change*-1,0,max_change)), limits = c(max_change*-1,max_change)) + theme_bw() +
   geom_label_repel(data=labels, aes(label=feature), min.segment.length = 0)
 ```
-
-
-
-
-
-
 
 ```{r}
 # sims <- textstat_simil(dfmat, method="cosine")
@@ -505,6 +553,7 @@ topic_words_117 %>%
 
 summary_sentiment <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_w_vader.csv")
 ```
+
 ```{r}
 ggplot(summary_sentiment, aes(x = compound)) + 
   geom_histogram(aes(y=..density..), colour="black", fill="white") +
@@ -538,6 +587,7 @@ ggplot(daily_sentiment, aes(x=date, y = score, colour=party)) +
   theme_minimal() + 
   geom_smooth(method = "lm")
 ```
+
 ```{r}
 summary_sentiment$party_full <- ifelse(summary_sentiment$cosponsor_D_perc == 1.0, "Dem", ifelse(summary_sentiment$cosponsor_R_perc == 1.0, "Rep", NA))
 
@@ -583,6 +633,7 @@ ggplot(daily_sentiment_116, aes(x=date, y = score, colour=party_full)) +
   theme_minimal() + 
   geom_smooth(method = "lm")
 ```
+
 ```{r}
 days_117 <- data.frame(date = seq(as.Date("2021-01-01"),as.Date("2022-12-31"),1))
 
@@ -599,6 +650,7 @@ ggplot(daily_sentiment_117, aes(x=date, y = score, colour=party_full)) +
   theme_minimal() + 
   geom_smooth(method = "lm")
 ```
+
 ## Some machine learning
 
 ```{r}
@@ -682,4 +734,3 @@ scorer <- metric_set( yardstick::accuracy,
 
 scorer(test_data, truth=env, estimate=prediction, event_level="second")
 ```
-
