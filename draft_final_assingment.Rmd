@@ -108,8 +108,7 @@ dfmat <- corp %>%
 dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
   dfm_trim(min_termfreq = 3)
 
-textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
-                   color = c("blue", "red"))
+textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300, color = c("green","orange","grey"))
 
 #Wordcloud congress 115
 ```
@@ -135,47 +134,6 @@ mp16 <- textplot_wordcloud(modelpart16, comparison = TRUE, max_words = 300,
                    color = c("green","blue", "red"))
 ```
 
-
-
-## Wordcloud comparing Democrats and Republicans
-
-```{r, wa }
-dfmatRepDem <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups =
-                     corp$party) %>%
-  dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-  dfm_trim(min_termfreq = 3)
-
-textplot_wordcloud(dfmatRepDem, comparison = TRUE, max_words = 300,
-                   color = c("green","blue", "red"))
-```
-
-## Wordcloud congress parties 115
-
-```{r, wa }
-
-corp_115 <- df %>% filter(session == 115) %>% rename(text = summary) %>% corpus()
-modelpart15 <- dfm(corp_115, remove = stopwords("english"),remove_numbers = TRUE, remove_punct = TRUE, groups = corp_115$party) %>%
-   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-  dfm_trim(min_termfreq = 3)
-
-mp15 <- textplot_wordcloud(modelpart15, comparison = TRUE, max_words = 300,
-                   color = c("green","blue", "red"))
-mp15
-```
-
-## Wordcloud congress parties 116
-
-```{r, wa }
-
-corp_116 <- df %>% filter(session == 116) %>% rename(text = summary) %>% corpus()
-modelpart16 <- dfm(corp_116, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp_116$party) %>% dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
-  dfm_trim(min_termfreq = 3)
-
-mp16 <- textplot_wordcloud(modelpart16, comparison = TRUE, max_words = 300,
-                   color = c("green","blue", "red"))
-mp16
-
-```
 
 
 
