@@ -25,6 +25,7 @@ library(vader)
 library(tidyr)
 library(tidymodels) 
 library(textrecipes)
+library(plotly)
 ```
 
 ```{r }
@@ -36,6 +37,7 @@ df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/da
 #if two thirds of the sponsors are democrats, we consider the bill democrat-dominated
 #same for republicans
 #if there is no clear majority, they are "Both"
+
 df$party <- ifelse(df$cosponsor_D_perc > 0.66, "Democrat", ifelse(df$cosponsor_R_perc > 0.66, "Republican", "Both"))
 ```
 
@@ -365,6 +367,8 @@ sim_df <- as.data.frame(sims, upper = TRUE)
 sim_df
 ```
 
+##Dimensionality plotting
+
 ```{r }
 corp2 <- corpus(df$summary)
 
@@ -381,10 +385,44 @@ df$y <- embeddings[,2]
 
 colordict <- c( "Democrat"="blue","Republican"="red", "Both"="yellow")
 
-ggplot(df, aes(x, y, fill=party)) + 
+p <- ggplot(df, aes(x, y, fill=party)) + 
   geom_point(color="grey", shape=21, size=0.5) + 
   scale_fill_manual(values=colordict) +
   theme_bw()
+
+
+p
+ggplotly(p)
+```
+
+```{r }
+df1 <- df %>%
+  mutate(party_full = ifelse(cosponsor_D_perc == 1.0, "Dem",
+                             ifelse(cosponsor_R_perc == 1.0, "Rep", NA))) %>%
+  drop_na(party_full)
+
+corp3 <- corpus(df1$summary)
+
+dfmat3 <- corp3 %>%
+  tokens(remove_punct = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  dfm() %>%
+  dfm_trim(min_termfreq = 5)
+
+embeddings2 <- umap(as.matrix(dfmat3)) 
+
+df1$x <- embeddings2[,1]
+df1$y <- embeddings2[,2]
+
+colordict2 <- c( "Democrat"="blue","Republican"="red")
+
+j <- ggplot(df1, aes(x, y, fill=party)) + 
+  geom_point(color="grey", shape=21, size=0.5) + 
+  scale_fill_manual(values=colordict2) +
+  theme_bw()
+
+j
+ggplotly(j)
 ```
 
 ##Topic modeling
