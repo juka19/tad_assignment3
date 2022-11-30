@@ -68,7 +68,7 @@ dfmat <- corp %>%
   tokens_remove(patter = stopwords("en")) %>%
   tokens_replace(pattern = lexicon::hash_lemmas$token, replacement = lexicon::hash_lemmas$lemma) %>%
   tokens_wordstem() %>%
-  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "use", "author","fund","provid","program","requir","divis","titl")) %>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "use", "author","fund","provid","program","requir","divis","titl","appropri","specifi")) %>%
   dfm()
 
 #Do we also want to lemmatize and apply word stems??
