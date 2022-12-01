@@ -108,7 +108,7 @@ dfmat <- corp %>%
   tokens_remove(patter = stopwords("en")) %>%
   tokens_replace(pattern = lexicon::hash_lemmas$token, replacement = lexicon::hash_lemmas$lemma) %>%
   tokens_wordstem() %>%
-  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "use", "author","fund","provid","program","requir","divis","titl","appropri","specifi")) %>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "used","provided","title","program","author","fund","provid","program","requir","divis","titl","appropri","specifi","prohibits", "also","congress","provides","appropriations","designates")) %>%
   dfm()
 
 ```
@@ -119,13 +119,13 @@ dfmat <- corp %>%
 
 ```{r, warning = FALSE}
 
-dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used","provided","title","program","author","fund","provid","program","requir","divis","titl","appropri","specifi","prohibits", "also","congress","provides","appropriations","designates")) %>%
   dfm_trim(min_termfreq = 3)
 
 textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
                    color = c("blue", "red"))
 
-#Wordcloud congress 115
+
 ```
 
 ## Comparing the 115th and 116th congress
@@ -135,14 +135,14 @@ textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
 dfmat_115 <- dfm_subset(dfmat, session == 115)
 corp_115 <- df %>% filter(session == 115) %>% rename(text = summary) %>% corpus()
 modelpart15 <- dfm(corp_115, remove = stopwords("english"),remove_numbers = TRUE, remove_punct = TRUE, groups = corp_115$party) %>%
-   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used","provided","title","program","author","fund","provid","program","requir","divis","titl","appropri","specifi","prohibits", "also","congress","provides","appropriations","designates")) %>%
   dfm_trim(min_termfreq = 3)
 
 mp15 <- textplot_wordcloud(modelpart15, comparison = TRUE, max_words = 300,
                    color = c("green","blue", "red"))
 
 corp_116 <- df %>% filter(session == 116) %>% rename(text = summary) %>% corpus()
-modelpart16 <- dfm(corp_116, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp_116$party) %>% dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+modelpart16 <- dfm(corp_116, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp_116$party) %>% dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used","provided","title","program","author","fund","provid","program","requir","divis","titl","appropri","specifi","prohibits", "also","congress","provides","appropriations","designates")) %>%
   dfm_trim(min_termfreq = 3)
 
 mp16 <- textplot_wordcloud(modelpart16, comparison = TRUE, max_words = 300,
