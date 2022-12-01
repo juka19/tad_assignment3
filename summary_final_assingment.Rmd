@@ -169,6 +169,10 @@ colordict <- c( "Democrat"="blue","Republican"="red", "Both"="yellow")
 
 p <- ggplot(df, aes(x, y, fill=party)) + 
   geom_point(color="grey", shape=21, size=0.5) + 
+  labs(title = "Dimensionality of all summary texts", x = "X", y = "Y",
+       fill = "Bill sponsorship", 
+       caption = "All bills represented, Democrat are bills with > 0.66 Democrat,
+       Republican are bills with > 0.66 Republican, Both are bills in between.") +
   scale_fill_manual(values=colordict) +
   theme_bw()
 
@@ -200,6 +204,10 @@ colordict2 <- c( "Democrat"="blue","Republican"="red")
 
 j <- ggplot(df1, aes(x, y, fill=party)) + 
   geom_point(color="grey", shape=21, size=0.5) + 
+    labs(title = "Dimensionality of partisan summary texts", x = "X", y = "Y",
+       fill = "Bill sponsorship",
+       caption = "Bills with only completely Democrat of 
+       Republican sponsorship represented.") +
   scale_fill_manual(values=colordict2) +
   theme_bw()
 
@@ -311,4 +319,6 @@ ggp
 
 -   In general the legilsation appears quite similar, with exceptions limited to specific policy areas and topics
 -   Democratic and Republican cooperation across the different congress sessions is highly dependent on the policy area and topic of the bill
+-   The dimensionality of texts is not systematically different between Democrat and Republican sponsored bills
+-   The sentiments of bills sponsored primarily by Democrats or Republicans does not seem correlated with the party in power
 -   There are some key actors that enable working across the aisle and are known for bipartisan collaboration
