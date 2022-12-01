@@ -1,16 +1,17 @@
 ---
-title: "draft_final_assignment"
-author: "Andrew Wells"
+title: "Final assignment presentation"
+author: "Alexander Kraess, Andrew Wells, Julian Kath & Lorenzo Gini"
 date: "11/18/2022"
 output: 
-  html_document:
+  prettydoc::html_pretty:
+    theme: hpstr
+    hightlight: github
     toc: TRUE
-    theme: cosmo
-    toc_float: TRUE
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(htmltools)
 library(tidyverse)
 library(quanteda)
 library(quanteda.textstats)
@@ -26,6 +27,10 @@ library(tidyr)
 library(tidymodels) 
 library(textrecipes)
 library(plotly)
+library(reticulate)
+library(igraph)
+library(rjson)
+library(visNetwork)
 ```
 
 # Research question
@@ -51,6 +56,8 @@ We scraped our data from: https://data.gov/developers/apis/index.html
 
 ```{r }
 df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_11_28.csv")
+df_cosp <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/cosponsors_sponsors.csv")
+df_bills <- read_csv("data\\old_data\\all_bills.csv")
 head(df, 5)
 ```
 
@@ -77,6 +84,12 @@ ggplot(df, aes(x = cosponsor_D_perc)) +
        so 0.0 represents bills that were fully Republican and 1.0 represents 
        bills that were fully Democrat.") +
   theme_minimal()
+```
+
+## Policy fields
+
+```{r}
+fromJSON(file = "slides\\plots\\polar_line_plot") %>% plotly::as_widget()
 ```
 
 ## Creating a corpus
@@ -162,8 +175,8 @@ p <- ggplot(df, aes(x, y, fill=party)) +
   theme_bw()
 
 
+p <- ggplotly(p)
 p
-ggplotly(p)
 ```
 
 ```{r }
@@ -192,8 +205,8 @@ j <- ggplot(df1, aes(x, y, fill=party)) +
   scale_fill_manual(values=colordict2) +
   theme_bw()
 
+j <- ggplotly(j)
 j
-ggplotly(j)
 ```
 
 
@@ -220,7 +233,88 @@ p4 <- ggplot(daily_sentiment, aes(x=date, y = score, colour=party)) +
 ggplotly(p4)
 ```
 
+# Network graph of 116 House members
+
+```{r}
+df_labels <- df_cosp %>% 
+  inner_join(
+    df, 
+    by = c("number"= "bill number")
+  ) %>% 
+  inner_join(
+    df_bills %>% select(number, originChamber),
+    by = 'number'
+  ) %>% 
+  filter(session == 116, originChamber == 'House') %>% 
+  mutate(
+    cosponsor_name = str_replace_all(cosponsor_name, '\\w\\.\\s', ''),
+    cosponsor_name = str_replace_all(tolower(cosponsor_name), " ", "_")) 
+
+df_labels %>% 
+  group_by(number) %>% 
+  summarize(cosps = paste(cosponsor_name, collapse = " ")) -> df_grouped
+
+corpus(df_grouped$cosps) %>% 
+  tokens() %>% 
+  fcm() %>% 
+  as.matrix() %>% 
+  graph_from_adjacency_matrix(mode = "undirected", weighted = T) %>% 
+  toVisNetworkData() -> visn
+
+visn$edges$value <- visn$edges$weight
+
+edges <- data.frame(visn$edges) %>% 
+  filter(weight > 25)
+nodes <- data.frame(visn$nodes) %>% 
+  left_join(df_labels %>% select(cosponsor_name, cosponsor_party) %>% distinct(), by = c('label' = 'cosponsor_name')) %>% 
+  filter(!duplicated(label)) %>% 
+  rename('group' = 'cosponsor_party') %>% 
+  mutate(color.background = if_else(group == "R",  "darkred", "darkblue"),
+         shadow = T,
+         font.color = 'black',
+         borderWidth = 2) %>% 
+  filter(label %in% edges$from | label %in% edges$to) %>% 
+  mutate(label = str_replace_all(label, '_',  ' ') %>% tools::toTitleCase(),
+         title = label)
+
+network <- visNetwork(nodes, edges) %>% 
+  visNodes(color = list(border = "darkgrey", 
+                        borderWidth = 2,
+                        highlight = list(border = 'darkgrey', background = 'orange'))
+           ) %>% 
+  visEdges(color = list(color = '#d3d3d3', highlight = 'orange')) %>% 
+  visPhysics(maxVelocity = 3)
+
+network
+```
+
+
 ## Topic modeling
 
-## Conclusion
+```{r}
+umap <- read.csv('data\\umap_projection_data.csv')
 
+umap %>% 
+  ggplot(aes(x, y, color = cosponsor_D_perc,
+             text = paste('Title:' , title, 
+                          '<br>Policy Area: ', policyarea, 
+                          '<br>Session: ', session, 
+                          '<br>Topic: ', cluster))) +  
+  geom_point() + 
+  scale_color_gradient2(midpoint = .5, name = "Democrat share") + 
+  theme_minimal() + 
+  labs(x = '', y = '', title = "UMAP Projection of US Congress bill summaries 115-117") +
+  theme(panel.background = element_rect(fill='#fbfbfb', colour='#fbfbfb')) -> p 
+
+ggp <- ggplotly(p)
+
+ggp
+```
+
+
+
+
+## Conclusion
+- In general the legilsation appears quite similar, with exceptions limited to specific policy areas and topics
+- Democratic and Republican cooperation across the different congress sessions is highly dependent on the policy area and topic of the bill
+- There are some key actors that enable working across the aisle and are known for bipartisan collaboration
