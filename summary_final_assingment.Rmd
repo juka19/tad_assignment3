@@ -1,0 +1,226 @@
+---
+title: "draft_final_assignment"
+author: "Andrew Wells"
+date: "11/18/2022"
+output: 
+  html_document:
+    toc: TRUE
+    theme: cosmo
+    toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(quanteda)
+library(quanteda.textstats)
+library(readr)
+library(dplyr)
+library(quanteda.textplots)
+library(uwot)
+library(topicmodels)
+library(tidytext)
+library(ggrepel)
+library(vader)
+library(tidyr)
+library(tidymodels) 
+library(textrecipes)
+library(plotly)
+```
+
+# Research question
+
+-   between 2016 and 2022 there have been major shifts in terms of majorities in the US congress:
+
+    -   in 2016, both chambers were hold by Republicans
+
+    -   in 2018, the Democrats gained a majority in Congress
+
+    -   in 2020 the Democrats gained Congress and Senate
+
+-   While one might expect that the post 2016 and 2020 congresses will vary in their policies. However, it is interesting to also focus on the period between 2018 and 2020: When both chambers had different majorities and needed to cooperate.
+
+-   We will focus on the question on whether and how the different majorities had an impact on the policies that have been passed by Congress.
+
+![](https://www.politico.com/dims4/default/0ba7efa/2147483647/strip/true/crop/1160x773+0+0/resize/1290x860!/quality/90/?url=https%253A%252F%252Fstatic.politico.com%252Fa3%252F2c%252Ffbd235e445b4a96e0373e3060e3c%252Fgettyimages-1294351903-1.jpg){width="400"}
+
+## Scraping and cleaning the data
+
+We scraped our data from: https://data.gov/developers/apis/index.html
+
+
+```{r }
+df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_11_28.csv")
+head(df, 5)
+```
+
+## Creating party variable
+
+```{r }
+#if two thirds of the sponsors are democrats, we consider the bill democrat-dominated
+#same for republicans
+#if there is no clear majority, they are "Both"
+
+df$party <- ifelse(df$cosponsor_D_perc > 0.66, "Democrat", ifelse(df$cosponsor_R_perc > 0.66, "Republican", "Both"))
+```
+
+## Summary statistics
+
+## Density of cosponsors
+```{r}
+ggplot(df, aes(x = cosponsor_D_perc)) + 
+  geom_histogram(aes(y=..density..), colour="black", fill="white") +
+  geom_density(alpha=.1, fill="blue") +
+  labs(title="Density of bill cosposor party",
+       x ="Cosponsor party composition", y = "Density", 
+       caption = "Numbers represent proportion of cosponsors from Democratic party, 
+       so 0.0 represents bills that were fully Republican and 1.0 represents 
+       bills that were fully Democrat.") +
+  theme_minimal()
+```
+
+## Creating a corpus
+
+```{r }
+df_corp <- df
+df_corp <- df_corp %>% rename(text = summary)
+corp <- corpus(df_corp)
+```
+
+## Creatung a dfm from the corpus
+```{r }
+dfmat <- corp %>%
+  tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  tokens_replace(pattern = lexicon::hash_lemmas$token, replacement = lexicon::hash_lemmas$lemma) %>%
+  tokens_wordstem() %>%
+  tokens_remove(c("sec","bill","act", "section", "funds", "shall","must", "use", "author","fund","provid","program","requir","divis","titl","appropri","specifi")) %>%
+  dfm()
+
+```
+
+# Wordclouds
+
+## Most common words in all congresses
+
+```{r, warning = FALSE}
+
+dfmatCon <- dfm(corp, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp$session) %>%dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm_trim(min_termfreq = 3)
+
+textplot_wordcloud(dfmatCon, comparison = TRUE, max_words = 300,
+                   color = c("blue", "red"))
+
+#Wordcloud congress 115
+```
+
+## Comparing the 115th and 116th congress
+
+```{r, warning = FALSE}
+
+dfmat_115 <- dfm_subset(dfmat, session == 115)
+corp_115 <- df %>% filter(session == 115) %>% rename(text = summary) %>% corpus()
+modelpart15 <- dfm(corp_115, remove = stopwords("english"),remove_numbers = TRUE, remove_punct = TRUE, groups = corp_115$party) %>%
+   dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm_trim(min_termfreq = 3)
+
+mp15 <- textplot_wordcloud(modelpart15, comparison = TRUE, max_words = 300,
+                   color = c("green","blue", "red"))
+
+corp_116 <- df %>% filter(session == 116) %>% rename(text = summary) %>% corpus()
+modelpart16 <- dfm(corp_116, remove = stopwords("english"), remove_numbers = TRUE, remove_punct = TRUE, groups = corp_116$party) %>% dfm_remove(c("sec","bill","act", "section", "funds", "shall","must", "used")) %>%
+  dfm_trim(min_termfreq = 3)
+
+mp16 <- textplot_wordcloud(modelpart16, comparison = TRUE, max_words = 300,
+                   color = c("green","blue", "red"))
+```
+
+
+
+
+## Dimensionality plotting
+
+```{r }
+corp2 <- corpus(df$summary)
+
+dfmat2 <- corp2 %>%
+  tokens(remove_punct = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  dfm() %>%
+  dfm_trim(min_termfreq = 5)
+
+embeddings <- umap(as.matrix(dfmat2)) 
+
+df$x <- embeddings[,1]
+df$y <- embeddings[,2]
+
+colordict <- c( "Democrat"="blue","Republican"="red", "Both"="yellow")
+
+p <- ggplot(df, aes(x, y, fill=party)) + 
+  geom_point(color="grey", shape=21, size=0.5) + 
+  scale_fill_manual(values=colordict) +
+  theme_bw()
+
+
+p
+ggplotly(p)
+```
+
+```{r }
+df1 <- df %>%
+  mutate(party_full = ifelse(cosponsor_D_perc == 1.0, "Dem",
+                             ifelse(cosponsor_R_perc == 1.0, "Rep", NA))) %>%
+  drop_na(party_full)
+
+corp3 <- corpus(df1$summary)
+
+dfmat3 <- corp3 %>%
+  tokens(remove_punct = TRUE) %>%
+  tokens_remove(patter = stopwords("en")) %>%
+  dfm() %>%
+  dfm_trim(min_termfreq = 5)
+
+embeddings2 <- umap(as.matrix(dfmat3)) 
+
+df1$x <- embeddings2[,1]
+df1$y <- embeddings2[,2]
+
+colordict2 <- c( "Democrat"="blue","Republican"="red")
+
+j <- ggplot(df1, aes(x, y, fill=party)) + 
+  geom_point(color="grey", shape=21, size=0.5) + 
+  scale_fill_manual(values=colordict2) +
+  theme_bw()
+
+j
+ggplotly(j)
+```
+
+
+##Sentiment analysis
+
+```{r, warning = FALSE}
+summary_sentiment <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_w_vader.csv")
+summary_sentiment$party <- ifelse(summary_sentiment$cosponsor_D_perc > 0.66, "Democrat", ifelse(summary_sentiment$cosponsor_R_perc > 0.66, "Republican", "Both"))
+  
+wide_sentiment <- summary_sentiment %>%
+  group_by(party, date) %>%
+  summarise(score = mean(compound)) %>% 
+  pivot_wider(names_from = party, values_from = score) %>%
+  select(-c("Both", "NA"))
+days <- data.frame(date = seq(as.Date("2017-01-01"),as.Date("2022-12-31"),1))
+daily_sentiment <- days %>% 
+  left_join(wide_sentiment) %>% 
+  pivot_longer(cols = -date, names_to="party", values_to="score")
+p4 <- ggplot(daily_sentiment, aes(x=date, y = score, colour=party)) +
+  geom_point(aes(y=score), size=1) + 
+  theme_minimal() + 
+  geom_smooth(method = "loess", se = FALSE)+
+  scale_color_manual(values = c("blue","red"))
+ggplotly(p4)
+```
+
+## Topic modeling
+
+## Conclusion
+
