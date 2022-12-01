@@ -35,13 +35,13 @@ library(visNetwork)
 
 # Research question
 
--   between 2016 and 2022 there have been major shifts in terms of majorities in the US congress:
+-   Between 2017 and 2022 there have been major shifts in terms of majorities in the US congress:
 
-    -   in 2016, both chambers were hold by Republicans
+    -   In the 115th Congress (Jan 2017 - Dec 2018), both chambers were hold by Republicans
 
-    -   in 2018, the Democrats gained a majority in Congress
+    -   In the 116th Congress (Jan 2019 - Dec 2020), the Democrats gained a majority in Congress, the Republicans remained in the majority in the Senate
 
-    -   in 2020 the Democrats gained Congress and Senate
+    -   In the 117th Congress (Jan 2021 - Dec 2022), the Democrats gained Congress and the Senate
 
 -   While one might expect that the post 2016 and 2020 congresses will vary in their policies. However, it is interesting to also focus on the period between 2018 and 2020: When both chambers had different majorities and needed to cooperate.
 
@@ -51,8 +51,7 @@ library(visNetwork)
 
 ## Scraping and cleaning the data
 
-We scraped our data from: https://data.gov/developers/apis/index.html
-
+We scraped our data from: <https://data.gov/developers/apis/index.html>
 
 ```{r }
 df <- read_csv("https://raw.githubusercontent.com/juka19/tad_assignment3/main/data/data_11_28.csv")
@@ -74,6 +73,7 @@ df$party <- ifelse(df$cosponsor_D_perc > 0.66, "Democrat", ifelse(df$cosponsor_R
 ## Summary statistics
 
 ## Density of cosponsors
+
 ```{r}
 ggplot(df, aes(x = cosponsor_D_perc)) + 
   geom_histogram(aes(y=..density..), colour="black", fill="white") +
@@ -101,6 +101,7 @@ corp <- corpus(df_corp)
 ```
 
 ## Creatung a dfm from the corpus
+
 ```{r }
 dfmat <- corp %>%
   tokens(remove_punct = TRUE, remove_numbers = TRUE, remove_symbols = TRUE) %>%
@@ -147,9 +148,6 @@ modelpart16 <- dfm(corp_116, remove = stopwords("english"), remove_numbers = TRU
 mp16 <- textplot_wordcloud(modelpart16, comparison = TRUE, max_words = 300,
                    color = c("green","blue", "red"))
 ```
-
-
-
 
 ## Dimensionality plotting
 
@@ -208,7 +206,6 @@ j <- ggplot(df1, aes(x, y, fill=party)) +
 j <- ggplotly(j)
 j
 ```
-
 
 ##Sentiment analysis
 
@@ -288,7 +285,6 @@ network <- visNetwork(nodes, edges) %>%
 network
 ```
 
-
 ## Topic modeling
 
 ```{r}
@@ -311,10 +307,8 @@ ggp <- ggplotly(p)
 ggp
 ```
 
-
-
-
 ## Conclusion
-- In general the legilsation appears quite similar, with exceptions limited to specific policy areas and topics
-- Democratic and Republican cooperation across the different congress sessions is highly dependent on the policy area and topic of the bill
-- There are some key actors that enable working across the aisle and are known for bipartisan collaboration
+
+-   In general the legilsation appears quite similar, with exceptions limited to specific policy areas and topics
+-   Democratic and Republican cooperation across the different congress sessions is highly dependent on the policy area and topic of the bill
+-   There are some key actors that enable working across the aisle and are known for bipartisan collaboration
